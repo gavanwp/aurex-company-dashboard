@@ -1,19 +1,33 @@
 import type { Metadata } from 'next'
-import { Building2 } from 'lucide-react'
-import { EmptyState } from '@aurexos/ui/components/empty-state'
+import { Plus } from 'lucide-react'
+import { Button } from '@aurexos/ui/components/button'
 import { PageHeader } from '@aurexos/ui/components/page-header'
+import { getWorkspaceContext } from '@/lib/workspace-context'
+import { ClientDialog, ClientsTable, getClients } from '@/modules/clients'
 
 export const metadata: Metadata = { title: 'Clients' }
 
-export default function ClientsPage() {
+export default async function ClientsPage() {
+  const ctx = await getWorkspaceContext()
+  const clients = await getClients(ctx)
+
   return (
     <div className="space-y-6">
-      <PageHeader title="Clients" description="The agencies and companies you work with." />
-      <EmptyState
-        icon={Building2}
-        title="This module is being built"
-        description="The Clients module will appear here soon."
+      <PageHeader
+        title="Clients"
+        description="The agencies and companies you work with."
+        actions={
+          <ClientDialog
+            trigger={
+              <Button>
+                <Plus className="mr-1.5 h-4 w-4" />
+                New client
+              </Button>
+            }
+          />
+        }
       />
+      <ClientsTable clients={clients} />
     </div>
   )
 }
