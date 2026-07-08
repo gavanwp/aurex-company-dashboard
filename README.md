@@ -12,8 +12,8 @@
 
 </div>
 
-> **Status: Planning & Architecture Phase (Phase 0)**
-> This repository currently contains the complete product and engineering blueprint for AurexOS. No application code exists yet — by design. Read [`docs/10_Roadmap.md`](docs/10_Roadmap.md) for what happens next.
+> **Status: Phase 1 — Internal MVP (in progress)**
+> The complete product and engineering blueprint lives in [`docs/`](docs/). Phase 1 implementation is underway: auth, workspaces, Dashboard, Projects, Tasks, CRM, Clients, and Settings are built on the multi-tenant foundation. Read [`docs/10_Roadmap.md`](docs/10_Roadmap.md) for what ships next.
 
 ---
 
@@ -104,45 +104,51 @@ Key decisions (full rationale in [`docs/08_Tech_Stack.md`](docs/08_Tech_Stack.md
 | Infra | Vercel · GitHub Actions CI/CD · Turborepo + pnpm · Docker |
 | Quality & Observability | Vitest · Playwright · Sentry · PostHog · Resend |
 
-## 📦 Installation
+## 📦 Getting Started
 
-> **Placeholder — application code begins in Phase 1.**
+Prerequisites: **Node 22+**, **pnpm 10+**, a [Supabase](https://supabase.com) project (or the Supabase CLI + Docker for a local stack).
 
 ```bash
-# Coming soon
 git clone https://github.com/gavanwp/aurex-company-dashboard.git
 cd aurex-company-dashboard
 pnpm install
-pnpm dev
+
+# 1. Configure environment
+cp .env.example apps/web/.env.local        # fill in your Supabase URL + keys
+
+# 2. Apply the database schema
+#    Hosted: run supabase/migrations/*.sql in order via the SQL editor or
+#    `supabase db push`. Local: `supabase start` applies migrations + seed.
+
+# 3. Run
+pnpm dev                                   # → http://localhost:3000
 ```
 
-Environment setup, Supabase provisioning, and seed instructions will land here with the first application code.
+The seed (`supabase/seed/seed.sql`, local/dev only) creates a demo login — `demo@aurexdesigns.com` / `aurexos-demo` — with a populated AurexDesigns workspace: clients, contacts, deals, projects, and tasks.
 
 ## 🗂 Repository Overview
 
 ```
 .
-├── docs/                  # The blueprint — start here
-│   ├── 01_Project_Vision.md
-│   ├── 02_Product_Requirements_Document.md
-│   ├── 03_System_Goals.md
-│   ├── 04_Feature_List.md
-│   ├── 05_User_Roles.md
-│   ├── 06_Module_Breakdown.md
-│   ├── 07_AI_Strategy.md
-│   ├── 08_Tech_Stack.md
-│   ├── 09_Scaling_Strategy.md
-│   ├── 10_Roadmap.md
-│   ├── 11_Design_Principles.md
-│   ├── 12_Project_Rules.md
-│   ├── 13_Folder_Structure.md
-│   ├── 14_Risk_Assessment.md
-│   ├── 15_Future_Ideas.md
+├── apps/
+│   └── web/               # The AurexOS app (Next.js App Router)
+│       ├── app/           # Routes only — thin pages per module
+│       ├── modules/       # Feature folders: dashboard, projects, tasks, crm, clients, settings, shared
+│       └── lib/           # Supabase clients, workspace context, action-kit
+├── packages/
+│   ├── ui/                # Design system (shadcn/ui + AurexOS components, tokens)
+│   ├── core/              # Domain layer: Zod schemas, types, events, permissions
+│   ├── db/                # Typed database layer (Database types, DbClient)
+│   └── config/            # Shared tsconfig + Tailwind presets
+├── supabase/
+│   ├── migrations/        # Schema + RLS policies (numbered SQL)
+│   └── seed/              # Deterministic demo data
+├── docs/                  # The blueprint (01–15) — start here
 │   └── adr/               # Architecture Decision Records
-└── README.md
+└── .github/workflows/     # CI: typecheck + build
 ```
 
-The future application layout (Turborepo monorepo: `apps/web`, `packages/ui`, `packages/core`, `packages/ai`, `packages/db`, `supabase/`) is specified in [`docs/13_Folder_Structure.md`](docs/13_Folder_Structure.md).
+Layout rules, import boundaries, and where new code goes: [`docs/13_Folder_Structure.md`](docs/13_Folder_Structure.md).
 
 ## 📚 Documentation
 
