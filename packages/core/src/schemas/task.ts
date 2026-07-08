@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { TASK_PRIORITIES, TASK_STATUSES } from '../types/index.js'
+import { TASK_PRIORITIES, TASK_STATUSES } from '../types/index'
 
 export const TaskSchema = z.object({
   id: z.string().uuid(),

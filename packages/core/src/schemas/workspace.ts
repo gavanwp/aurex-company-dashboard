@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { MEMBER_SPECIALIZATIONS, WORKSPACE_ROLES } from '../types/index.js'
+import { MEMBER_SPECIALIZATIONS, WORKSPACE_ROLES } from '../types/index'
 
 export const WorkspaceSchema = z.object({
   id: z.string().uuid(),

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { PROJECT_STATUSES } from '../types/index.js'
+import { PROJECT_STATUSES } from '../types/index'
 
 export const ProjectSchema = z.object({
   id: z.string().uuid(),

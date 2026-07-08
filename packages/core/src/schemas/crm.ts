@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { CLIENT_STATUSES, DEAL_STAGES } from '../types/index.js'
+import { CLIENT_STATUSES, DEAL_STAGES } from '../types/index'
 
 export const ClientSchema = z.object({
   id: z.string().uuid(),

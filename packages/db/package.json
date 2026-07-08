@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@aurexos/core": "workspace:*",
-    "@supabase/supabase-js": "^2.47.10"
+    "@supabase/supabase-js": "^2.110.1"
   },
   "devDependencies": {
     "@aurexos/config": "workspace:*",

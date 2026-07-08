@@ -10,10 +10,10 @@ export type {
   ProjectStatusDb,
   TaskStatusDb,
   TaskPriorityDb,
-} from './database.types.js'
+} from './database.types'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from './database.types.js'
+import type { Database } from './database.types'
 
 /** The one client type every query helper and server action accepts. */
 export type DbClient = SupabaseClient<Database>

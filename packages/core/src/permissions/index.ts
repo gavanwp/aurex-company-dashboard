@@ -1,4 +1,4 @@
-import type { Capability, WorkspaceRole } from '../types/index.js'
+import type { Capability, WorkspaceRole } from '../types/index'
 
 // RBAC capability map per 05_User_Roles.md. Server actions call can() before every
 // mutation; RLS in supabase/migrations is the database backstop — always both.
