@@ -31,3 +31,4 @@ test-results/
 *.pem
 *.log
 .vercel
+*.tsbuildinfo
