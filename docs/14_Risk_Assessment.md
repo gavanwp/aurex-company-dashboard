@@ -6,7 +6,7 @@
 | **Version** | 1.0 |
 | **Date** | 2026-07-08 |
 | **Owner** | Founding CTO, AurexDesigns |
-| **Related** | `01_Vision.md`, `03_Architecture.md`, `05_Security_And_Permissions.md`, `06_AI_Architecture.md`, `08_Tech_Stack.md`, `09_Scaling_Strategy.md`, `10_Roadmap.md`, `13_Folder_Structure.md` |
+| **Related** | `01_Project_Vision.md`, `08_Tech_Stack.md`, `05_User_Roles.md`, `07_AI_Strategy.md`, `08_Tech_Stack.md`, `09_Scaling_Strategy.md`, `10_Roadmap.md`, `13_Folder_Structure.md` |
 
 This is an honest register, not a reassurance document. AurexOS is an ambitious bet — an "everything app" for agencies with AI as the operating layer, built by a small team — and several of these risks are *likely* to materialize in some form. The register exists so that when they do, we recognize them early (every risk has a named **early-warning signal**) and respond with a pre-agreed mitigation instead of improvising.
 
@@ -22,7 +22,7 @@ This is an honest register, not a reassurance document. AurexOS is an ambitious 
 
 An "AI operating system" with 20 modules is a scope-creep machine by construction: every module is a company-sized product somewhere else (CRM = Pipedrive, Finance = a chunk of Xero, Email Center = Front). The single most likely failure mode for AurexOS is not a technical one — it is **shipping 20 modules at 40% depth**, ending up with an internal tool nobody outside would pay for and an internal team quietly returning to best-of-breed tools.
 
-**Position:** the phased roadmap is a contract, not a suggestion. Each phase has a written definition of done; modules not in the current phase get *schema reservations at most* (a table design in `04_Database_Schema.md`), never code. New module ideas go to a parking-lot doc, batch-reviewed at phase gates. The forcing question for every feature: *"does AurexDesigns need this to run the agency this quarter?"* — until Phase 5 flips the question to paying customers. The deliberately-absent list in `13_Folder_Structure.md` §8 is this risk made mechanical: folders that don't exist can't accrete code.
+**Position:** the phased roadmap is a contract, not a suggestion. Each phase has a written definition of done; modules not in the current phase get *schema reservations at most* (a table design in `08_Tech_Stack.md`), never code. New module ideas go to a parking-lot doc, batch-reviewed at phase gates. The forcing question for every feature: *"does AurexDesigns need this to run the agency this quarter?"* — until Phase 5 flips the question to paying customers. The deliberately-absent list in `13_Folder_Structure.md` §8 is this risk made mechanical: folders that don't exist can't accrete code.
 
 **Early warning:** phase gate slips twice in a row; any sprint where >20% of merged PRs touch modules outside the current phase; "while we're at it" appearing in PR descriptions.
 
@@ -30,7 +30,7 @@ An "AI operating system" with 20 modules is a scope-creep machine by constructio
 
 The catastrophic risk. One agency's client list, financials, or contracts rendered to another workspace ends the SaaS ambition on day one — and unlike downtime, trust does not restore from backup. Our shared-schema model (`09_Scaling_Strategy.md` §2) concentrates this risk in RLS correctness, which is why isolation is enforced in **layers**: deny-by-default RLS on every table (CI-linted), pgTAP policy tests per table, a two-tenant Playwright probe suite on every PR, `service_role` confined to Edge Functions behind a wrapper that makes `workspace_id` a mandatory parameter, workspace-prefixed storage keys, workspace-scoped realtime channels, and a ban on CDN-edge caching of tenant data. Aurex adds a subtle variant: **retrieval leakage** — RAG queries must be workspace-filtered *inside* the database (RLS on the embeddings table), never post-filtered in application code.
 
-**Early warning:** any pgTAP or two-tenant E2E failure (treated as SEV-2 even in CI); support ticket containing "I can see someone else's…" (instant SEV-1, disclosure protocol per `05_Security_And_Permissions.md`); any new migration merged with RLS lint warnings overridden.
+**Early warning:** any pgTAP or two-tenant E2E failure (treated as SEV-2 even in CI); support ticket containing "I can see someone else's…" (instant SEV-1, disclosure protocol per `05_User_Roles.md`); any new migration merged with RLS lint warnings overridden.
 
 ### 1.3 — T3: AI cost blowout
 
@@ -85,13 +85,13 @@ A founding-CTO-shaped team means architecture, product judgment, vendor relation
 |---|---|---|---|---|---|---|
 | B1 | **Crowded market vs incumbents** — competing simultaneously with ClickUp/Monday (work mgmt), HubSpot (CRM), HoneyBook/Bonsai (agency suites), and every "AI copilot" feature those incumbents ship for free | High | High | Wedge, not war: the differentiator is *AI as the operating layer over the agency's own unified data* (one event spine + per-tenant RAG across CRM/projects/finance/email) — a structural advantage suites bolting AI onto siloed modules can't match cheaply. Sell to a sharp ICP (small digital agencies, 5–50 seats) where suite-consolidation pain is highest; dogfooding = permanent proof artifact; pricing anchored on tool-consolidation savings | Founder/CEO | Pilot agencies churning back to point tools; incumbents shipping unified-context AI (not just chat sidebars); Phase 5 CAC assumptions failing in first 10 sales conversations |
 | B2 | **Bus factor / founder concentration** (top-5 prose §1.5) | High | Critical | Docs+ADRs+runbooks; mechanical conventions; second on-call before external tenants; shared vendor account ownership | Founder/CEO | §1.5 signals |
-| B3 | **Compliance timeline (GDPR / SOC 2)** — external agencies (and *their* clients, via the portal) put personal data in the system; EU tenants make GDPR immediate at Phase 5, and mid-market deals will demand SOC 2 sooner than expected | Medium (High at Phase 5) | High | GDPR groundwork now (cheap because designed-in): data inventory per table in `04_Database_Schema.md`, soft-delete + purge jobs = deletion capability, audit log = processing record, EU-hostable vendors chosen (Supabase/PostHog EU regions), DPAs collected from all processors. SOC 2: controls-aligned behavior from Phase 2 (access reviews, change mgmt via PRs, incident runbooks) so the Phase 5 audit is evidence-gathering, not re-engineering; budget observation period into Phase 5 timeline (Type I → Type II ≈ 6–12 months) | CTO | First EU pilot signup; first security questionnaire from a prospect; any personal-data table lacking a purge path |
+| B3 | **Compliance timeline (GDPR / SOC 2)** — external agencies (and *their* clients, via the portal) put personal data in the system; EU tenants make GDPR immediate at Phase 5, and mid-market deals will demand SOC 2 sooner than expected | Medium (High at Phase 5) | High | GDPR groundwork now (cheap because designed-in): data inventory per table in `08_Tech_Stack.md`, soft-delete + purge jobs = deletion capability, audit log = processing record, EU-hostable vendors chosen (Supabase/PostHog EU regions), DPAs collected from all processors. SOC 2: controls-aligned behavior from Phase 2 (access reviews, change mgmt via PRs, incident runbooks) so the Phase 5 audit is evidence-gathering, not re-engineering; budget observation period into Phase 5 timeline (Type I → Type II ≈ 6–12 months) | CTO | First EU pilot signup; first security questionnaire from a prospect; any personal-data table lacking a purge path |
 
 ---
 
 ## 5. Security Risks
 
-(Threat model detail in `05_Security_And_Permissions.md`; this register tracks the standing risks.)
+(Threat model detail in `05_User_Roles.md`; this register tracks the standing risks.)
 
 | ID | Risk | Likelihood | Impact | Mitigation | Owner | Early-warning signal |
 |---|---|---|---|---|---|---|

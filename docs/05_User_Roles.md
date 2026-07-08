@@ -6,7 +6,7 @@
 | **Version** | 1.0 |
 | **Date** | 2026-07-08 |
 | **Owner** | Founding CTO, AurexDesigns |
-| **Related** | 04_Architecture.md, 06_Module_Breakdown.md, 07_AI_Strategy.md, 08_Tech_Stack.md, 09_Data_Model.md, 10_Roadmap.md, 12_Security.md |
+| **Related** | 08_Tech_Stack.md, 06_Module_Breakdown.md, 07_AI_Strategy.md, 08_Tech_Stack.md, 06_Module_Breakdown.md, 10_Roadmap.md, 05_User_Roles.md |
 
 ---
 
@@ -264,7 +264,7 @@ Full architecture in 07_AI_Strategy.md; the binding rules live here:
 
 - AurexDesigns support staff have **zero standing access** to customer workspaces.
 - Access requires: (a) customer Owner/Admin grants a support session (scoped: modules, duration ≤ 72h, read-only by default), (b) support engineer identity verified, (c) session fully audited and visible to the customer in their audit log, (d) auto-expiry and one-click revocation.
-- Break-glass access (legal/incident) requires two-person authorization inside AurexDesigns, is logged to an immutable store, and triggers customer notification per policy in 12_Security.md.
+- Break-glass access (legal/incident) requires two-person authorization inside AurexDesigns, is logged to an immutable store, and triggers customer notification per policy in 05_User_Roles.md.
 
 ---
 
@@ -282,7 +282,7 @@ All events land in the append-only `audit_log` (see 06_Module_Breakdown.md §Aud
 | `impersonation.started / ended` | impersonator, target, duration, pages viewed |
 | `support_session.granted / used / expired` | grantor, scope, actions |
 | `ai.action_executed` | actor, ai_run_id, tool, autonomy level, approval ref |
-| `auth.login / mfa_change / api_key_created` | device, IP (retention per 12_Security.md) |
+| `auth.login / mfa_change / api_key_created` | device, IP (retention per 05_User_Roles.md) |
 
 Rules: audit rows are insert-only (no UPDATE/DELETE grants, enforced at the Postgres role level); retention minimum 7 years for finance/contract events, 2 years otherwise (configurable upward, never downward below floor); Owner can export; audit access is itself audited.
 

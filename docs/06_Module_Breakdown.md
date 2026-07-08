@@ -6,9 +6,9 @@
 | **Version** | 1.0 |
 | **Date** | 2026-07-08 |
 | **Owner** | Founding CTO, AurexDesigns |
-| **Related** | 04_Architecture.md, 05_User_Roles.md, 07_AI_Strategy.md, 08_Tech_Stack.md, 09_Data_Model.md, 10_Roadmap.md |
+| **Related** | 08_Tech_Stack.md, 05_User_Roles.md, 07_AI_Strategy.md, 08_Tech_Stack.md, 06_Module_Breakdown.md, 10_Roadmap.md |
 
-This is the deepest document in the planning set: the functional and conceptual-data blueprint for every core module of AurexOS. It defines *what each module is*, not *how it is coded*. Physical schema lives in 09_Data_Model.md; AI internals live in 07_AI_Strategy.md; phase sequencing detail lives in 10_Roadmap.md.
+This is the deepest document in the planning set: the functional and conceptual-data blueprint for every core module of AurexOS. It defines *what each module is*, not *how it is coded*. Physical schema lives in 06_Module_Breakdown.md; AI internals live in 07_AI_Strategy.md; phase sequencing detail lives in 10_Roadmap.md.
 
 **Conventions used throughout:**
 
@@ -688,7 +688,7 @@ Cross-cutting concerns (search/command palette, notifications engine internals, 
 
 **Phase availability.** Phase 3 (flagship). Hardcoded system automations (overdue sweeps, kickoff bundle) exist from Phase 1–2 and are migrated into visible Studio recipes at Phase 3.
 
-**Open questions.** Should project-scoped automation creation be open to Team Members (currently PM+)? Rate limits per workspace for Phase 5 (noisy-tenant protection) — proposal in 11_SaaS_Readiness.md.
+**Open questions.** Should project-scoped automation creation be open to Team Members (currently PM+)? Rate limits per workspace for Phase 5 (noisy-tenant protection) — proposal in 09_Scaling_Strategy.md.
 
 ---
 
@@ -816,7 +816,7 @@ Cross-cutting concerns (search/command palette, notifications engine internals, 
 
 **Core capabilities.**
 - Member lifecycle (invite/role/deactivate) with the audit and claims-refresh behavior of 05_User_Roles.md §11; access-review checklist generation (quarterly).
-- Security policy: MFA enforcement, session length, impersonation policy, IP notes (full detail in 12_Security.md).
+- Security policy: MFA enforcement, session length, impersonation policy, IP notes (full detail in 05_User_Roles.md).
 - AI governance panel: autonomy ceiling, per-category approvals, budget, data flags — the Owner-facing surface of 07_AI_Strategy.md.
 - Integrations manager with credential vaulting and health checks; feature-flag admin (internal until Phase 5).
 - Workspace data lifecycle: export (full JSON/CSV), soft-delete retention windows, hard-delete approval flow (Owner + cooling period).

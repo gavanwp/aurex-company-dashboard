@@ -7,7 +7,7 @@
 | **Version** | 1.0 |
 | **Date** | 2026-07-08 |
 | **Owner** | Founding CTO, AurexDesigns |
-| **Related** | [05_Architecture.md](./05_Architecture.md) · [10_Roadmap.md](./10_Roadmap.md) · [11_Design_Principles.md](./11_Design_Principles.md) · [15_Future_Ideas.md](./15_Future_Ideas.md) |
+| **Related** | [08_Tech_Stack.md](./08_Tech_Stack.md) · [10_Roadmap.md](./10_Roadmap.md) · [11_Design_Principles.md](./11_Design_Principles.md) · [15_Future_Ideas.md](./15_Future_Ideas.md) |
 
 ---
 

@@ -6,9 +6,9 @@
 | **Version** | 1.0 |
 | **Date** | 2026-07-08 |
 | **Owner** | Founding CTO, AurexDesigns |
-| **Related** | `03_Architecture.md`, `04_Database_Schema.md`, `06_AI_Architecture.md`, `09_Scaling_Strategy.md`, `13_Folder_Structure.md`, `14_Risk_Assessment.md` |
+| **Related** | `08_Tech_Stack.md`, `08_Tech_Stack.md`, `07_AI_Strategy.md`, `09_Scaling_Strategy.md`, `13_Folder_Structure.md`, `14_Risk_Assessment.md` |
 
-This document is the single source of truth for every technology in AurexOS: what we use, **why** we use it, what we considered instead, and when it enters the stack. Any deviation requires an ADR appended to `03_Architecture.md` and an update here. AurexOS is a **modular monolith in a Turborepo monorepo**, multi-tenant from day one (workspaces + Postgres RLS), with AI as the operating system — every choice below is evaluated against those three constraints.
+This document is the single source of truth for every technology in AurexOS: what we use, **why** we use it, what we considered instead, and when it enters the stack. Any deviation requires an ADR appended to `08_Tech_Stack.md` and an update here. AurexOS is a **modular monolith in a Turborepo monorepo**, multi-tenant from day one (workspaces + Postgres RLS), with AI as the operating system — every choice below is evaluated against those three constraints.
 
 ---
 
@@ -70,7 +70,7 @@ This document is the single source of truth for every technology in AurexOS: wha
 ### 2.7 React Hook Form + Zod — forms & validation
 
 - **Decision:** React Hook Form with `zodResolver`; every domain schema defined **once** in `packages/core` and reused in: client form validation, Server Action input parsing, Edge Function payload validation, and AI tool parameter schemas.
-- **Rationale:** Shared client/server validation is a security requirement (client validation is UX, server validation is the contract) and an AI requirement — Aurex's tool-calling layer (`06_AI_Architecture.md`) derives JSON Schemas for tools from the same Zod definitions, so the assistant can never construct a payload the API wouldn't accept from a human.
+- **Rationale:** Shared client/server validation is a security requirement (client validation is UX, server validation is the contract) and an AI requirement — Aurex's tool-calling layer (`07_AI_Strategy.md`) derives JSON Schemas for tools from the same Zod definitions, so the assistant can never construct a payload the API wouldn't accept from a human.
 - **Alternatives considered:** *Valibot* — smaller bundle, but Zod's ecosystem (resolvers, OpenAPI, JSON Schema derivation for AI tools) wins; *Yup* — weaker TS inference; *server-only validation* — worse UX, and still needs a schema source of truth.
 
 ---
@@ -82,7 +82,7 @@ We consolidate the backend on Supabase (managed Postgres + Auth + Edge Functions
 ### 3.1 PostgreSQL + Row-Level Security — database & tenancy
 
 - **Decision:** Single shared-schema Postgres with **RLS enabled on every table, no exceptions**, keyed on `workspace_id`. RLS policies are written once as reusable SQL functions (`auth_workspace_ids()`, role-check helpers) and applied uniformly by migration templates.
-- **Rationale:** Postgres is the only database that gives us relational integrity, RLS-based tenancy, `pgvector`, LISTEN/NOTIFY-backed realtime, and JSONB in one engine — which means one backup story, one query language, one mental model. RLS moves tenant isolation from "every developer remembers a WHERE clause" to "the database refuses" — defense in depth demanded by `05_Security_And_Permissions.md`.
+- **Rationale:** Postgres is the only database that gives us relational integrity, RLS-based tenancy, `pgvector`, LISTEN/NOTIFY-backed realtime, and JSONB in one engine — which means one backup story, one query language, one mental model. RLS moves tenant isolation from "every developer remembers a WHERE clause" to "the database refuses" — defense in depth demanded by `05_User_Roles.md`.
 - **Alternatives considered:** *schema-per-tenant* — migration fan-out becomes operationally brutal past ~50 tenants; *database-per-tenant* — reserved as the **enterprise tier escape hatch** (see `09_Scaling_Strategy.md` §2.5), not the default; *MySQL/PlanetScale* — no RLS, no pgvector; *MongoDB* — the domain (invoices ↔ projects ↔ clients ↔ tasks) is intensely relational.
 
 ### 3.2 Database conventions (normative)
@@ -102,7 +102,7 @@ These are enforced by migration review and a CI lint over the schema dump:
 ### 3.3 Supabase Auth
 
 - **Decision:** Supabase Auth for identity (email/password, OAuth: Google + GitHub, magic links for the Client Portal), with our own `workspace_members` table carrying role assignments; JWT claims carry `workspace_id` + role for RLS evaluation.
-- **Rationale:** Native integration with RLS (`auth.uid()` in policies) removes an entire class of auth-database drift. RBAC itself (Owner → Guest, per `05_Security_And_Permissions.md`) lives in **our** tables, so we're not modeling roles in a vendor's opinionated system.
+- **Rationale:** Native integration with RLS (`auth.uid()` in policies) removes an entire class of auth-database drift. RBAC itself (Owner → Guest, per `05_User_Roles.md`) lives in **our** tables, so we're not modeling roles in a vendor's opinionated system.
 - **Alternatives considered:** *Clerk* — superb DX, but per-MAU pricing scales badly for a SaaS with client-portal seats, and it splits the identity source of truth away from the RLS database; *Auth.js* — self-maintained security surface we'd rather not own; *WorkOS* — added later only for enterprise SSO/SCIM (Phase 5), in front of Supabase Auth.
 
 ### 3.4 Supabase Edge Functions — server logic beyond Next.js
@@ -121,7 +121,7 @@ These are enforced by migration review and a CI lint over the schema dump:
 
 ## 4. AI Stack
 
-Full architecture in `06_AI_Architecture.md`; stack decisions summarized here.
+Full architecture in `07_AI_Strategy.md`; stack decisions summarized here.
 
 ### 4.1 Model providers — Claude primary, OpenAI secondary
 
@@ -197,7 +197,7 @@ Full architecture in `06_AI_Architecture.md`; stack decisions summarized here.
 | Unit / logic | **Vitest** | `packages/core` (schemas, permissions logic, event contracts), `packages/ai` (gateway routing, prompt assembly — with recorded model fixtures). Fast, ESM-native, Turborepo-cacheable. |
 | Component | **Testing Library** (+ Vitest, happy-dom) | `packages/ui` primitives and critical feature components (forms, permission-gated UI). Behavior-first queries; no snapshot-only tests. |
 | E2E | **Playwright** | Cross-module critical paths: auth + workspace switching, **RLS/tenant-isolation smoke suite** (user A must never see workspace B data — run on every PR), invoice lifecycle, task board, portal access boundaries. Runs against a seeded local Supabase. |
-| Database | **pgTAP-style SQL tests** (via Supabase test harness) | RLS policies tested as code: every table gets deny-by-default assertions. Non-negotiable per `05_Security_And_Permissions.md`. |
+| Database | **pgTAP-style SQL tests** (via Supabase test harness) | RLS policies tested as code: every table gets deny-by-default assertions. Non-negotiable per `05_User_Roles.md`. |
 | AI evals | Vitest-driven eval harness (Phase 3) | Golden-set evaluations for Aurex tool-selection and RAG answer quality; regression gate on prompt/model changes. |
 
 Chosen over Jest (slower, worse ESM), Cypress (Playwright's parallelism, trace viewer, and multi-context — needed for two-tenant isolation tests — win).
@@ -260,4 +260,4 @@ The original brief specified the core (Next.js, Supabase, Claude/OpenAI, LangGra
 
 ---
 
-*Changes to this document follow the ADR process in `03_Architecture.md`. Costs and scale triggers referenced here are maintained in `09_Scaling_Strategy.md`.*
+*Changes to this document follow the ADR process in `08_Tech_Stack.md`. Costs and scale triggers referenced here are maintained in `09_Scaling_Strategy.md`.*

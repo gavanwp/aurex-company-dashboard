@@ -6,7 +6,7 @@
 | **Version** | 1.0 |
 | **Date** | 2026-07-08 |
 | **Owner** | Founding CTO, AurexDesigns |
-| **Related** | `03_Architecture.md`, `04_Database_Schema.md`, `05_Security_And_Permissions.md`, `06_AI_Architecture.md`, `08_Tech_Stack.md`, `10_Roadmap.md`, `14_Risk_Assessment.md` |
+| **Related** | `08_Tech_Stack.md`, `08_Tech_Stack.md`, `05_User_Roles.md`, `07_AI_Strategy.md`, `08_Tech_Stack.md`, `10_Roadmap.md`, `14_Risk_Assessment.md` |
 
 This document defines how AurexOS scales from **one agency (AurexDesigns, internal)** to **thousands of agency workspaces** as a commercial SaaS — without a rewrite. The strategy is explicitly staged: we buy headroom with architecture (tenancy model, event spine, module seams) and spend money/complexity (replicas, queues, shards) only when named metrics demand it. **Every scaling step below has a trigger; nothing is built speculatively.**
 
@@ -25,7 +25,7 @@ This document defines how AurexOS scales from **one agency (AurexDesigns, intern
 
 ### 2.1 The model: shared schema, `workspace_id` + RLS
 
-Every tenant-scoped table carries `workspace_id uuid NOT NULL`. Postgres RLS policies — deny-by-default, applied to every table — restrict all reads/writes to workspaces the authenticated user belongs to, with role predicates layered per `05_Security_And_Permissions.md`. JWT claims (workspace memberships, active role) are evaluated inside policies via stable helper functions so the planner can cache them.
+Every tenant-scoped table carries `workspace_id uuid NOT NULL`. Postgres RLS policies — deny-by-default, applied to every table — restrict all reads/writes to workspaces the authenticated user belongs to, with role predicates layered per `05_User_Roles.md`. JWT claims (workspace memberships, active role) are evaluated inside policies via stable helper functions so the planner can cache them.
 
 ### 2.2 Why shared-schema multi-tenancy
 
@@ -128,7 +128,7 @@ Deliberately **not** caching tenant data at the CDN edge: cache-key-by-tenant mi
 
 ### 4.4 AI scaling: cost, growth, batch, tiering
 
-AI is the dominant variable cost at SaaS scale. Controls (full detail in `06_AI_Architecture.md`):
+AI is the dominant variable cost at SaaS scale. Controls (full detail in `07_AI_Strategy.md`):
 
 - **Token cost management:** every model call is metered per workspace/feature/model in `ai_usage` from the first call (Phase 1 scaffold). Budgets per plan tier with soft (warn) and hard (degrade to smaller tier / require confirmation) limits. Prompt caching for stable system/context prefixes. Context assembly is retrieval-first — RAG snippets, never "stuff the whole CRM in."
 - **Model tiering:** logical tiers (`fast`/`standard`/`frontier`) routed by task class: classification, tagging, and routing on `fast`; drafting and summarization on `standard`; multi-step agentic work on `frontier`. Tier mapping is config, so provider price/capability changes are ops events, not deploys.

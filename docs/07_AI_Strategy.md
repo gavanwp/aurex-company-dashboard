@@ -6,7 +6,7 @@
 | **Version** | 1.0 |
 | **Date** | 2026-07-08 |
 | **Owner** | Founding CTO, AurexDesigns |
-| **Related** | 04_Architecture.md, 05_User_Roles.md, 06_Module_Breakdown.md, 08_Tech_Stack.md, 10_Roadmap.md, 12_Security.md |
+| **Related** | 08_Tech_Stack.md, 05_User_Roles.md, 06_Module_Breakdown.md, 08_Tech_Stack.md, 10_Roadmap.md, 05_User_Roles.md |
 
 This is the architecture bible for everything AI in AurexOS. It is binding: any AI feature that cannot be expressed within this architecture either changes this document first or does not ship.
 
@@ -154,7 +154,7 @@ The gateway is the **only** code path to model providers. Nothing above it knows
   - Provider-side prompt caching for stable prefixes (system frame, tool registry, workspace profile) — the biggest single cost lever for agentic loops.
   - Gateway response cache for deterministic, low-temperature tasks (classification of identical inputs, repeated digest sub-queries), keyed by (model, prompt hash, tool state), short TTL, **never** cached across workspaces.
 - **Uniform telemetry:** every call logs workspace, user/run ref, model, tokens in/out/cached, latency, cost, outcome — feeding budgets (§9), evals (§10), and the AI audit trail (§8.4).
-- **Compliance posture:** zero-data-retention / no-training API agreements with both providers; regional routing options deferred to Phase 5 (see 12_Security.md).
+- **Compliance posture:** zero-data-retention / no-training API agreements with both providers; regional routing options deferred to Phase 5 (see 05_User_Roles.md).
 
 ---
 
@@ -255,7 +255,7 @@ Aurex reads emails, uploaded documents, transcripts, and web content — all att
 ### 8.5 No Cross-Tenant Training
 
 - Customer data is never used to train or fine-tune models — ours or providers'. Provider agreements: zero retention, no training (§4).
-- Cross-tenant *product* learning (e.g., improving prompts from aggregate outcomes) uses only de-identified, aggregate telemetry (acceptance rates, latency, eval scores) — never content. This is a contractual commitment for Phase 5 SaaS, written into the DPA (12_Security.md).
+- Cross-tenant *product* learning (e.g., improving prompts from aggregate outcomes) uses only de-identified, aggregate telemetry (acceptance rates, latency, eval scores) — never content. This is a contractual commitment for Phase 5 SaaS, written into the DPA (05_User_Roles.md).
 
 ### 8.6 PII Handling
 
@@ -334,7 +334,7 @@ The architecture above is deliberately the substrate for a marketplace of instal
 - **Installation contract:** the manifest declares every tool and permission the agent needs; install shows the diff (like mobile app permissions); the agent runs strictly within the installing workspace's autonomy policy and the invoking user's permissions — marketplace agents get **no** new primitive capabilities, only compositions of registered tools. Third-party tools (external API calls) run through vetted n8n-style connectors with credential vaulting, never arbitrary egress.
 - **Review & safety:** submission pipeline runs our safety regression suite against the agent's graph; agents ship with their eval sets and minimum score bars; runtime sandboxing (bounded steps/cost, no registry mutation); kill-switch per agent version; full AIRun auditing identical to first-party Aurex.
 - **Commercials:** revenue share, per-run or subscription pricing metered through the same gateway telemetry; AurexDesigns' own vertical agents seed the catalog.
-- **Prerequisite gates (must be true before building):** tool registry stable ≥ 2 phases; eval infrastructure mature (§10); tenant isolation independently audited (12_Security.md); public API + webhooks shipped (events table as the integration spine, 06_Module_Breakdown.md Appendix A).
+- **Prerequisite gates (must be true before building):** tool registry stable ≥ 2 phases; eval infrastructure mature (§10); tenant isolation independently audited (05_User_Roles.md); public API + webhooks shipped (events table as the integration spine, 06_Module_Breakdown.md Appendix A).
 
 ---
 

@@ -6,7 +6,7 @@
 | **Version** | 1.0 |
 | **Date** | 2026-07-08 |
 | **Owner** | Founding CTO, AurexDesigns |
-| **Related** | `03_Architecture.md`, `05_Security_And_Permissions.md`, `08_Tech_Stack.md`, `09_Scaling_Strategy.md`, `11_Testing_Strategy.md` |
+| **Related** | `08_Tech_Stack.md`, `05_User_Roles.md`, `08_Tech_Stack.md`, `09_Scaling_Strategy.md`, `12_Project_Rules.md` |
 
 This is the definitive layout of the AurexOS monorepo (Turborepo + pnpm workspaces, per `08_Tech_Stack.md` §7). The structure exists to make the **modular monolith real**: module boundaries are visible in the filesystem, enforced by import rules, and aligned with the future service-extraction seams described in `09_Scaling_Strategy.md` §5. When in doubt about where code goes, use the decision table in §6.
 
@@ -68,7 +68,7 @@ aurex-company-dashboard/
 │   │   ├── permissions/          # RBAC logic: role → capability maps, can() helpers
 │   │   ├── jobs/                 # enqueue() interface + job payload contracts
 │   │   └── lib/                  # Pure shared logic (money, dates, ids) — zero I/O
-│   ├── ai/                       # AI layer (Phase 1 scaffold, Phase 3 full — see 06_AI_Architecture.md)
+│   ├── ai/                       # AI layer (Phase 1 scaffold, Phase 3 full — see 07_AI_Strategy.md)
 │   │   ├── gateway/              # Provider abstraction, model tiers, metering, fallback
 │   │   ├── agents/               # LangGraph graphs (checkpointed, HITL interrupt nodes)
 │   │   ├── tools/                # Tool definitions — derived from packages/core schemas
@@ -177,7 +177,7 @@ The three iron laws:
 | An AI tool / agent graph / prompt | `packages/ai/tools|agents|prompts` |
 | An email template | `packages/ui/emails/` |
 | An n8n workflow | Built in n8n, exported JSON committed to `infra/n8n/` |
-| A new module entirely | New folder in `modules/` + route group entry + schemas/events in `core` + an entry in `02_Modules.md` — requires a design doc first |
+| A new module entirely | New folder in `modules/` + route group entry + schemas/events in `core` + an entry in `06_Module_Breakdown.md` — requires a design doc first |
 | A test | Colocated `*.test.ts(x)` for unit/component; `apps/web/e2e/` for Playwright; `supabase/tests/` for RLS |
 
 ## 7. Naming conventions (normative)
@@ -205,4 +205,4 @@ Absence below is a decision, not an omission:
 - **Redis config, queue workers, cell routing** — each appears only when its named scaling trigger fires.
 - **Mobile apps** — out of scope pre-Phase 5; the web app is responsive by requirement.
 
-The tree grows by subtraction of this list, each entry moving out only via an ADR in `03_Architecture.md`.
+The tree grows by subtraction of this list, each entry moving out only via an ADR in `adr/`.

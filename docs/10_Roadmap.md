@@ -7,7 +7,7 @@
 | **Version** | 1.0 |
 | **Date** | 2026-07-08 |
 | **Owner** | Founding CTO, AurexDesigns |
-| **Related** | [01_Project_Vision.md](./01_Project_Vision.md) · [02_Product_Requirements_Document.md](./02_Product_Requirements_Document.md) · [05_Architecture.md](./05_Architecture.md) · [12_Project_Rules.md](./12_Project_Rules.md) · [15_Future_Ideas.md](./15_Future_Ideas.md) |
+| **Related** | [01_Project_Vision.md](./01_Project_Vision.md) · [02_Product_Requirements_Document.md](./02_Product_Requirements_Document.md) · [08_Tech_Stack.md](./08_Tech_Stack.md) · [12_Project_Rules.md](./12_Project_Rules.md) · [15_Future_Ideas.md](./15_Future_Ideas.md) |
 
 ---
 
