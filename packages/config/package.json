@@ -1,0 +1,16 @@
+{
+  "name": "@aurexos/config",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared tooling presets: tsconfig, tailwind",
+  "exports": {
+    "./tsconfig/base.json": "./tsconfig/base.json",
+    "./tsconfig/react-library.json": "./tsconfig/react-library.json",
+    "./tsconfig/nextjs.json": "./tsconfig/nextjs.json",
+    "./tailwind/preset": "./tailwind/preset.ts"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17",
+    "tailwindcss-animate": "^1.0.7"
+  }
+}

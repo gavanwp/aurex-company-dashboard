@@ -1,0 +1,21 @@
+{
+  "name": "@aurexos/db",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Database access layer: Supabase Database types and query helpers. Headless — never imports UI.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aurexos/core": "workspace:*",
+    "@supabase/supabase-js": "^2.47.10"
+  },
+  "devDependencies": {
+    "@aurexos/config": "workspace:*",
+    "typescript": "^5.7.2"
+  }
+}

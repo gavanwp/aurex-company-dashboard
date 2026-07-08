@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Next.js
+.next/
+out/
+next-env.d.ts
+
+# Build outputs
+dist/
+build/
+.turbo/
+
+# Environment — never commit secrets
+.env
+.env.local
+.env.*.local
+
+# Supabase local
+supabase/.branches/
+supabase/.temp/
+
+# Testing
+coverage/
+playwright-report/
+test-results/
+
+# Misc
+.DS_Store
+*.pem
+*.log
+.vercel

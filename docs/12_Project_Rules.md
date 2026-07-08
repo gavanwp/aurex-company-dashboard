@@ -11,83 +11,236 @@
 
 ---
 
-These rules are **binding**. They exist because AurexOS is multi-tenant from day one and will hold other agencies' businesses: their money, contracts, and client data. Rules are numbered for citation in code review ("violates R-D3"). Every rule states *what*, *why*, and *how it's enforced*. Enforcement legend: **Lint** (ESLint/typecheck, fails locally and in CI) · **CI** (automated pipeline check) · **Review** (mandatory human code review) · **Runtime** (enforced by the platform itself, e.g. RLS).
+These rules are **binding**, not aspirational. They exist because AurexOS is multi-tenant from day one and will hold other agencies' entire businesses — their money, contracts, credentials, and client data. A rule that would be optional in a single-tenant internal tool is existential here.
+
+Rules are numbered for citation in code review ("violates R-D3"). Each rule states the rule, a short rationale, and how it is enforced.
+
+**Enforcement legend:**
+- **Lint** — ESLint/typecheck rule; fails locally and in CI.
+- **CI** — automated pipeline check; blocks merge.
+- **Review** — mandatory human code review; the PR template checklist is keyed to rule IDs.
+- **Runtime** — enforced by the platform itself (e.g., RLS, DB grants), so violation is impossible, not just detected.
+
+---
 
 ## 1. Language & Types (R-T)
 
-| # | Rule | Rationale | Enforcement |
-|---|---|---|---|
-| R-T1 | TypeScript strict mode everywhere. `strict: true` plus `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes` in the shared tsconfig; no package may weaken it. | Half of production bugs are type bugs someone silenced. | CI (typecheck) |
-| R-T2 | No `any`. Not explicit, not implicit, not `as any`. Truly unknown data is `unknown` and must be narrowed or Zod-parsed before use. `@ts-ignore` is banned; `@ts-expect-error` requires a comment explaining why and an issue link. | `any` is a contagion that disables the compiler downstream. | Lint (`no-explicit-any`, ban-ts-comment) |
-| R-T3 | Zod at every boundary: API inputs, server-action arguments, webhook payloads, env vars, third-party API responses, form submissions, queue/event payloads. Internal call sites may trust types; boundaries never do. | The type system ends where the network begins. | Review + Lint (server actions must call a `defineAction` wrapper that requires a schema) |
-| R-T4 | Derive types from schemas (`z.infer`), and DB types from generated Supabase types. Never hand-write a duplicate of a type that has a source of truth. | Duplicated types drift; drift becomes prod bugs. | Review |
-| R-T5 | No non-null assertions (`!`) outside test files. Handle the null path or prove impossibility with a parse. | `!` is a runtime crash wearing a type annotation. | Lint |
+**R-T1 — TypeScript strict mode, everywhere.**
+`strict: true` plus `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes` in the shared tsconfig. No package or app may weaken the shared config.
+*Rationale:* half of production bugs are type bugs someone silenced; strictness is cheapest at line one.
+*Enforced by:* CI (typecheck on every package).
+
+**R-T2 — No `any`. Ever.**
+Not explicit, not implicit, not `as any`, not hidden behind a generic. Data of genuinely unknown shape is typed `unknown` and must be narrowed or Zod-parsed before use. `@ts-ignore` is banned outright; `@ts-expect-error` requires an adjacent comment explaining why plus a tracked issue link.
+*Rationale:* `any` is a contagion — it disables the compiler for everything downstream of it.
+*Enforced by:* Lint (`no-explicit-any`, `ban-ts-comment`, implicit-any via strict mode).
+
+**R-T3 — Zod at every boundary.**
+Every API input, server-action argument, webhook payload, environment variable, third-party API response, form submission, and queue/event payload is parsed with a Zod schema before use. Internal function calls may trust the type system; boundaries never do.
+*Rationale:* the type system's guarantees end where the network begins; runtime validation is the only truth at the edge.
+*Enforced by:* Lint (server actions must be declared through the `defineAction` wrapper, which requires an input schema) + Review.
+
+**R-T4 — Types derive from their source of truth.**
+Application types come from `z.infer<typeof schema>`; database types come from generated Supabase types. Hand-writing a parallel copy of a type that has a canonical source is forbidden.
+*Rationale:* duplicated types drift silently, and drift becomes production bugs.
+*Enforced by:* Review + CI (Supabase type generation checked for freshness).
+
+**R-T5 — No non-null assertions outside tests.**
+`!` is forbidden in application code. Handle the null path, restructure so it cannot occur, or prove the value with a parse.
+*Rationale:* a non-null assertion is a runtime crash wearing a type annotation.
+*Enforced by:* Lint (`no-non-null-assertion`, test files exempted).
 
 ## 2. Architecture (R-A)
 
-| # | Rule | Rationale | Enforcement |
-|---|---|---|---|
-| R-A1 | Clean layering inside the modular monolith: `ui → application (actions/services) → domain → infrastructure`. UI never imports the DB client; domain logic never imports React. Each module (crm, projects, finance, …) exposes a public interface; cross-module reach-ins to internals are forbidden. | Modules must stay extractable and independently testable; the monolith stays modular only if boundaries are policed. | Lint (import-boundary rules via eslint-plugin-boundaries) + Review |
-| R-A2 | Server Components by default. `"use client"` only for genuinely interactive leaves, and as low in the tree as possible. | Less client JS = the speed promised in [11_Design_Principles.md](./11_Design_Principles.md). | Review + CI (bundle-size budget) |
-| R-A3 | All mutations go through server actions or Supabase Edge Functions — never client-side DB writes, never mutations in GET handlers or Server Components. Every mutation path runs: validate (Zod) → authorize (RBAC) → execute → emit domain event → audit. | One choke point makes security, auditing, and events enforceable at all. | Lint (`defineAction` wrapper mandatory) + Review |
-| R-A4 | Never duplicate code — extract to packages. Second use of a UI component → `packages/ui`; of business logic → the owning module's service; of a utility → `packages/utils` (or the relevant shared package). Copy-paste across `apps/` or across modules is a rejected PR. | Duplication is how multi-tenant bugs get fixed in one place and stay live in another. | Review + CI (jscpd duplication check on changed files) |
-| R-A5 | Import direction is one-way: `apps/*` may import `packages/*`; `packages/*` never import from `apps/*`; packages declare their allowed dependencies explicitly. Circular imports are build failures. | Cycles make refactoring and extraction impossible. | Lint + CI (madge circular-dependency check) |
-| R-A6 | Domain events over direct coupling: side effects in other modules (notifications, audit, automations) subscribe to events from the `domain_events` table — module A never calls module B's internals to trigger its behavior. | The event core is what makes Automation Studio and the AI layer possible ([10_Roadmap.md](./10_Roadmap.md) Phase 3). | Review |
+**R-A1 — Clean layering inside the modular monolith.**
+Dependency direction within each module: `ui → application (actions/services) → domain → infrastructure`. UI code never imports the DB client; domain logic never imports React. Each module (crm, projects, finance, …) exposes a public interface (`index.ts`); importing another module's internals is forbidden.
+*Rationale:* the monolith stays modular — and modules stay extractable, testable, and sellable — only if boundaries are policed mechanically.
+*Enforced by:* Lint (eslint-plugin-boundaries with an explicit layer/module map) + Review.
+
+**R-A2 — Server Components by default.**
+`"use client"` appears only on genuinely interactive leaves, pushed as low in the tree as possible. Data fetching happens on the server unless interactivity requires otherwise.
+*Rationale:* less client JavaScript is how we deliver the speed promised in [11_Design_Principles.md](./11_Design_Principles.md).
+*Enforced by:* Review + CI (per-route bundle-size budgets).
+
+**R-A3 — All mutations through server actions or Edge Functions.**
+No client-side database writes. No mutations in GET handlers or during Server Component render. Every mutation path runs the same sequence: **validate (Zod) → authorize (RBAC) → execute → emit domain event → write audit log** — provided by the shared `defineAction` wrapper.
+*Rationale:* one choke point is what makes security, auditing, and the event core enforceable at all.
+*Enforced by:* Lint (raw Supabase client banned in client bundles; mutations must use `defineAction`) + Review.
+
+**R-A4 — Never duplicate code; extract to packages.**
+The second use of a UI component moves it to `packages/ui`; the second use of business logic moves it into the owning module's service; the second use of a utility moves it to the shared utilities package. Copy-paste across apps or modules is a rejected PR.
+*Rationale:* in a multi-tenant system, duplication is how a security fix lands in one copy and stays broken in the other.
+*Enforced by:* CI (jscpd duplication check on changed files) + Review.
+
+**R-A5 — One-way import graph.**
+`apps/*` may import `packages/*`; `packages/*` never import from `apps/*`; each package declares its allowed dependencies. Circular imports anywhere are build failures.
+*Rationale:* cycles make extraction, testing, and reasoning impossible; the graph must stay a DAG.
+*Enforced by:* Lint (boundaries) + CI (madge circular-dependency check).
+
+**R-A6 — Domain events over direct coupling.**
+Cross-module side effects (notifications, audit, automations, AI triggers) subscribe to events from the `domain_events` table. Module A never calls module B's internals to trigger B's behavior. Event names follow `module.entity.verb` in past tense (§8).
+*Rationale:* the event core is the substrate for Automation Studio and the AI layer ([10_Roadmap.md](./10_Roadmap.md) Phase 3); bypassing it starves them.
+*Enforced by:* Review + Lint (cross-module import bans make direct coupling difficult by construction).
 
 ## 3. Data (R-D)
 
-| # | Rule | Rationale | Enforcement |
-|---|---|---|---|
-| R-D1 | RLS enabled on **every** table, with explicit policies — including "internal" tables. A table without RLS cannot merge. | One unprotected table is a full tenant-isolation breach. | CI (migration linter asserts RLS on new tables) + Runtime |
-| R-D2 | `workspace_id` (non-null, FK, indexed) on every tenant-scoped table, and every RLS policy filters by it. Tables that are genuinely global (e.g. plan catalogs) require an ADR saying so. | Tenancy must be structural, not conventional. | CI (schema check) + Review |
-| R-D3 | Soft delete everywhere: `deleted_at timestamptz` on user-facing entities; default reads exclude soft-deleted rows; hard deletes only via scheduled purge jobs and the GDPR erasure flow. | Users delete the wrong thing weekly; agencies' businesses live here. | CI (schema check) + Review |
-| R-D4 | Append-only audit log for every mutation: actor (user or Aurex), workspace, entity, action, before/after diff, timestamp, request id. Audit rows are never updated or deleted (no UPDATE/DELETE grants on the table). | Trust, debugging, compliance, and the "Aurex did this" attribution in [11_Design_Principles.md](./11_Design_Principles.md) all depend on it. | Runtime (DB grants) + Review (mutation wrapper writes audit automatically) |
-| R-D5 | Primary keys are UUIDv7. No serial/identity integers for entity IDs, no UUIDv4 for new tables. | Time-ordered UUIDs: index locality without leaking row counts. | CI (migration linter) |
-| R-D6 | Database identifiers are `snake_case` — tables (plural), columns, functions, indexes. Mapping to camelCase happens in the data layer, nowhere else. | One convention; no quoting hell. | CI (migration linter) |
-| R-D7 | Migrations only — schema changes exclusively via versioned migration files in the repo, applied by pipeline. Manual changes in *any* environment (including local "just to test") are forbidden; migrations are forward-only (fix-forward, no edited history after merge). | The schema must be reproducible from the repo, always. | CI (schema drift check: prod schema diffed against migrations nightly) |
-| R-D8 | Money is stored as integer minor units with an explicit `currency` column. Never floats, never implicit currency. | Floating-point money is how invoices stop reconciling ([10_Roadmap.md](./10_Roadmap.md) Phase 2 exit criteria). | CI (migration linter bans float money columns) + Review |
+**R-D1 — RLS on every table. No exceptions.**
+Every table has row-level security enabled with explicit policies — including lookup and "internal" tables. A migration creating a table without RLS cannot merge.
+*Rationale:* one unprotected table is a complete tenant-isolation breach; "we'll add the policy later" is how breaches ship.
+*Enforced by:* CI (migration linter asserts RLS + policies on every new table) + Runtime (Postgres enforces the policies).
+
+**R-D2 — `workspace_id` on every tenant-scoped table.**
+Non-null, foreign-keyed to `workspaces`, indexed, and referenced by the table's RLS policies. Genuinely global tables (plan catalogs, system config) require an ADR justifying the exemption.
+*Rationale:* tenancy must be structural in the schema, not a convention in application code.
+*Enforced by:* CI (schema check) + Review + Runtime (RLS).
+
+**R-D3 — Soft delete everywhere.**
+Every user-facing entity carries `deleted_at timestamptz`. Default read paths exclude soft-deleted rows. Hard deletes happen only via scheduled retention purges and the GDPR erasure flow — never from feature code.
+*Rationale:* users delete the wrong thing weekly, and agencies' businesses live in these rows; recoverability is a product feature.
+*Enforced by:* CI (schema check for the column; Semgrep rule flags `DELETE`/`.delete()` in feature code) + Review.
+
+**R-D4 — Append-only audit log for every mutation.**
+Every mutation writes an audit row: actor (human user or Aurex), workspace, entity, action, before/after diff, timestamp, request id. The audit table has no UPDATE or DELETE grants for any application role.
+*Rationale:* trust, debugging, compliance, and the "Aurex did this" attribution ([11_Design_Principles.md](./11_Design_Principles.md) §9) all stand on this log.
+*Enforced by:* Runtime (DB grants make tampering impossible) + the `defineAction` wrapper writing audit automatically + Review.
+
+**R-D5 — Primary keys are UUIDv7.**
+No serial/identity integers for entity IDs; no UUIDv4 on new tables.
+*Rationale:* time-ordered UUIDs give B-tree index locality without leaking row counts or enabling enumeration.
+*Enforced by:* CI (migration linter).
+
+**R-D6 — Database identifiers are `snake_case`.**
+Tables (plural nouns), columns, functions, indexes, policies. Mapping to camelCase happens once, in the data layer.
+*Rationale:* one convention end-to-end; no quoted-identifier hell.
+*Enforced by:* CI (migration linter).
+
+**R-D7 — Migrations only. Never manual schema changes.**
+Schema changes exist exclusively as versioned migration files in the repo, applied by the pipeline. Manual changes in any environment — including local "just to test" — are forbidden. Merged migrations are immutable; mistakes are fixed forward with a new migration.
+*Rationale:* the schema must be reproducible from the repo at any commit; drift makes RLS guarantees unverifiable.
+*Enforced by:* CI (nightly schema-drift check diffing production against migrations) + process (no human holds standing DDL access to production).
+
+**R-D8 — Money is integer minor units plus an explicit currency column.**
+Never floats, never numeric-with-vibes, never an implied currency.
+*Rationale:* floating-point money is how invoices stop reconciling — and reconciliation to the cent is a Phase 2 exit criterion ([10_Roadmap.md](./10_Roadmap.md) §5).
+*Enforced by:* CI (migration linter bans float/real money columns) + Review.
 
 ## 4. Security (R-S)
 
-| # | Rule | Rationale | Enforcement |
-|---|---|---|---|
-| R-S1 | RBAC checked server-side on every route, server action, and edge function — via the shared `authorize(actor, permission, resource)` helper, before any work. Client-side checks are UX sugar only. RLS is the backstop, not the check. | Defense in depth: UI hides, application authorizes, database isolates. | Lint (`defineAction` requires a permission declaration) + Review + Runtime (RLS) |
-| R-S2 | No secrets in code, ever — no API keys, tokens, connection strings, or webhook secrets in source, config files, or test fixtures. All secrets via environment variables. | One leaked service key is a full-database breach in a multi-tenant system. | CI (gitleaks secret scanning on every push) |
-| R-S3 | Env vars validated with Zod at boot in `packages/config/env.ts`; the app refuses to start on missing/malformed config. `process.env` is accessed nowhere else. | Fail at deploy time, not at 2 a.m. when the code path finally runs. | Lint (ban raw `process.env` outside env.ts) + Runtime |
-| R-S4 | No hardcoded values for anything environment- or tenant-dependent: URLs, limits, plan quotas, model names, fee percentages live in config or DB — not string literals scattered through code. | Hardcoded values are silent cross-environment and cross-tenant bugs. | Review |
-| R-S5 | Input validation server-side always (R-T3), plus: HTML sanitized before render, file uploads validated for type/size and stored on R2 with signed URLs, all queries parameterized (no string-built SQL). | The client is enemy territory. | Review + CI (Semgrep rules for raw SQL/dangerouslySetInnerHTML) |
-| R-S6 | Principle of least privilege for tokens: the Supabase service-role key exists only in server-only modules (never in anything bundled client-side); third-party tokens scoped minimally and per-integration; per-workspace credentials encrypted at rest; internal tokens rotated quarterly. | Every credential's blast radius must be the smallest possible. | Lint (server-only import guard) + Review + CI (bundle scan for key patterns) |
-| R-S7 | New tables, roles, or permission changes require adversarial tests: prove the *forbidden* access fails (cross-tenant read, privilege escalation, client-role reaching internal data). | Security tests that only prove allowed paths prove nothing. | CI (RLS/permission test suite) + Review |
+**R-S1 — RBAC checked server-side on every route, action, and function.**
+Every server action, route handler, and Edge Function calls the shared `authorize(actor, permission, resource)` helper before doing any work. Client-side permission checks are UX sugar only. RLS is the backstop, never the primary check.
+*Rationale:* defense in depth — the UI hides, the application authorizes, the database isolates. Each layer assumes the others failed.
+*Enforced by:* Lint (`defineAction` requires a permission declaration) + Review + Runtime (RLS backstop).
+
+**R-S2 — No secrets in code. Ever.**
+No API keys, tokens, connection strings, or webhook secrets in source, config files, fixtures, or documentation. All secrets flow through environment variables and the platform secret stores.
+*Rationale:* in a multi-tenant system, one leaked service key is a full-database breach across every customer.
+*Enforced by:* CI (gitleaks secret scanning on every push, blocking) + pre-commit scan.
+
+**R-S3 — Env vars validated with Zod at boot.**
+A single `packages/config/env.ts` defines the schema for every environment variable; the app refuses to start if config is missing or malformed. Raw `process.env` access is banned everywhere else.
+*Rationale:* configuration errors should fail at deploy time, not at 2 a.m. when the code path finally executes.
+*Enforced by:* Lint (no raw `process.env` outside env.ts) + Runtime (boot-time parse).
+
+**R-S4 — No hardcoded environment- or tenant-dependent values.**
+URLs, limits, plan quotas, model identifiers, fee percentages, and feature thresholds live in validated config or the database — never as string/number literals scattered through features.
+*Rationale:* hardcoded values are silent cross-environment bugs and future multi-tenant billing disputes.
+*Enforced by:* Review + Lint (env access pattern funnels config through one place).
+
+**R-S5 — Server-side input validation, always — plus output hygiene.**
+R-T3 covers parsing; additionally: user HTML is sanitized before render, file uploads are validated for type and size and stored on R2 behind signed URLs, and all SQL is parameterized — string-built queries are banned.
+*Rationale:* the client is enemy territory; every injection class gets a structural defense, not vigilance.
+*Enforced by:* CI (Semgrep rules for raw SQL and `dangerouslySetInnerHTML`) + Review.
+
+**R-S6 — Least privilege for every token.**
+The Supabase service-role key exists only in server-only modules and never in client bundles. Third-party tokens are scoped minimally, per integration, per workspace, and encrypted at rest. Internal machine tokens rotate quarterly.
+*Rationale:* every credential's blast radius must be the smallest the job allows.
+*Enforced by:* Lint (server-only import guard) + CI (client-bundle scan for key patterns) + Review.
+
+**R-S7 — Adversarial tests for every permission surface.**
+New tables, roles, or permission changes ship with tests that prove forbidden access *fails*: cross-tenant reads, privilege escalation, client-role reaching internal records.
+*Rationale:* security tests that only exercise allowed paths prove nothing; the negative case is the test.
+*Enforced by:* CI (RLS/permission adversarial suite, required) + Review.
 
 ## 5. AI (R-AI)
 
-| # | Rule | Rationale | Enforcement |
-|---|---|---|---|
-| R-AI1 | All model calls go through the AI gateway in `packages/ai` — no direct Anthropic/OpenAI SDK imports anywhere else. The gateway owns routing (Claude primary, OpenAI secondary), retries, cost metering, logging, and redaction. | One choke point for cost, audit, provider swaps, and safety. | Lint (ban provider SDK imports outside packages/ai) |
-| R-AI2 | Every AI action is audited: prompt version, model, input context references, output, tokens/cost, workspace, triggering user, and resulting mutations — written to the audit log (R-D4) and surfaced as "Aurex did this" attribution. | Unattributed AI output is a trust and compliance failure ([11_Design_Principles.md](./11_Design_Principles.md) §9). | Runtime (gateway writes audit automatically) |
-| R-AI3 | Human approval required for AI actions that are outbound (emails, client-portal publishes, payment links) or destructive (deletes, bulk edits, permission changes). These execute only from an explicitly approved approval card; the approval is itself audited. | An AI that emails a client something wrong once destroys adoption. | Review + Runtime (gateway action classification gates execution) |
-| R-AI4 | No tenant data crosses tenants: retrieval (pgvector) is RLS-scoped by `workspace_id`; prompts are assembled only from the acting workspace's data; no cross-tenant caching of completions containing tenant data; tenant data never used to train or fine-tune models. | Tenant isolation applies to the AI layer with zero exceptions — this is existential. | Runtime (RLS on embeddings) + CI (adversarial retrieval tests) + Review |
-| R-AI5 | Prompts are code: versioned in `packages/ai/prompts`, reviewed in PRs, never inline string literals in features; behavior-affecting prompt changes run the eval harness before merge. | Prompt drift is a regression class like any other. | Lint (ban inline prompt strings in feature code) + CI (evals) |
-| R-AI6 | AI failures degrade gracefully: gateway timeouts and provider errors surface honest UI states ([11_Design_Principles.md](./11_Design_Principles.md) §9) and never block the non-AI path of a feature. | The OS must work when the AI doesn't. | Review |
+**R-AI1 — All model calls through the AI gateway. Only.**
+No direct Anthropic/OpenAI SDK imports outside `packages/ai`. The gateway owns provider routing (Claude primary, OpenAI secondary), retries, timeouts, cost metering, redaction, and logging.
+*Rationale:* one choke point for cost control, auditability, provider migration, and safety policy — the AI equivalent of R-A3.
+*Enforced by:* Lint (provider SDK imports banned outside packages/ai) + CI (dependency-graph check).
+
+**R-AI2 — Every AI action is audited.**
+Each gateway call records: prompt version, model, references to input context, output, token counts and cost, workspace, triggering user, and any resulting mutations — flowing into the R-D4 audit log and surfacing as the "Aurex did this" attribution.
+*Rationale:* unattributed AI output is a trust failure in the product and a liability in a compliance review.
+*Enforced by:* Runtime (the gateway writes the audit record itself; features cannot skip it).
+
+**R-AI3 — Human approval for outbound and destructive AI actions.**
+AI-proposed actions that leave the workspace (emails, client-portal publishes, payment links) or destroy/bulk-modify data execute only from an explicitly approved approval card ([11_Design_Principles.md](./11_Design_Principles.md) §9). The approval itself is audited with the approver's identity.
+*Rationale:* one wrong AI email to a client destroys adoption faster than a hundred good ones build it.
+*Enforced by:* Runtime (gateway classifies actions; unapproved outbound/destructive executions are refused) + Review.
+
+**R-AI4 — No tenant data crosses tenants. Zero exceptions.**
+Retrieval over pgvector is RLS-scoped by `workspace_id` like every other table. Prompts are assembled exclusively from the acting workspace's data. Completions containing tenant data are never cached across tenants. Tenant data is never used to train or fine-tune models.
+*Rationale:* tenant isolation applies to the AI layer with the same force as the database — a cross-tenant leak through a prompt is existential ([10_Roadmap.md](./10_Roadmap.md) Phase 3 risks).
+*Enforced by:* Runtime (RLS on embedding tables) + CI (adversarial cross-tenant retrieval tests) + Review.
+
+**R-AI5 — Prompts are code.**
+System prompts and prompt templates live versioned in `packages/ai/prompts`, are reviewed in PRs, and are never inline string literals inside feature code. Behavior-affecting prompt changes must run the eval harness before merge.
+*Rationale:* prompt drift is a regression class like any other and gets the same regression protection.
+*Enforced by:* Lint (inline prompt strings banned in feature code) + CI (eval suite on prompt changes).
+
+**R-AI6 — AI failure degrades gracefully.**
+Provider errors and timeouts surface honest UI states per [11_Design_Principles.md](./11_Design_Principles.md) §9 and never block the non-AI path of a feature. Every AI surface has a working manual fallback.
+*Rationale:* the OS must keep operating when the AI doesn't — availability of core workflows cannot depend on model uptime.
+*Enforced by:* Review + Playwright tests with the gateway mocked to fail.
 
 ## 6. Quality (R-Q)
 
-| # | Rule | Rationale | Enforcement |
-|---|---|---|---|
-| R-Q1 | Production-ready only — no TODO-driven development. Code merges finished: no `TODO`/`FIXME`/commented-out blocks/dead code in merged PRs. Deferred work becomes a tracked issue, not a comment. | TODOs are decisions postponed onto whoever reads the code next. | Lint (no-warning-comments on changed lines) + Review |
-| R-Q2 | Tests required for business logic: services, permission logic, money math, event handlers, and AI-gateway routing get unit tests (Vitest); each roadmap phase's golden paths get Playwright tests ([10_Roadmap.md](./10_Roadmap.md) §9). Trivial UI plumbing doesn't need tests; anything with a branch worth reviewing does. | Untested business logic in a system holding other companies' money is negligence. | CI (coverage gate on `packages/*` services + required suites) + Review |
-| R-Q3 | Code review required: every change to `main` via PR with at least one approval; no direct pushes, including by the CTO. Review covers rules-compliance, security, and design-system conformance — not just "does it work". | Solo-merged code is where tenant-isolation bugs live. | CI (branch protection) |
-| R-Q4 | Conventional commits (`feat:`, `fix:`, `refactor:`, `docs:`, `chore:`, with module scopes, e.g. `feat(finance): …`). Squash-merge PRs so `main` history is a readable changelog. | Machine-readable history enables changelogs and archaeology. | CI (commitlint) |
-| R-Q5 | CI must pass — typecheck, lint, unit, RLS/permission suite, Playwright smoke, migration lint, secret scan, build. Red CI is never merged over; a flaky test is a P1 bug, not an excuse. | A gate that can be skipped is not a gate. | CI (all checks required in branch protection) |
-| R-Q6 | Errors are handled or propagated deliberately — no empty `catch`, no swallowed promise rejections; user-facing errors follow [11_Design_Principles.md](./11_Design_Principles.md) §6; unexpected errors reach Sentry with request context. | Silent failure is the most expensive failure. | Lint (no-empty catch, no-floating-promises) + Review |
+**R-Q1 — Production-ready only. No TODO-driven development.**
+Code merges finished: no `TODO`/`FIXME` markers, no commented-out blocks, no dead code, no "temporary" hacks in merged PRs. Deferred work becomes a tracked issue linked from the PR, not a comment in the code.
+*Rationale:* a TODO is a decision postponed onto whoever reads the code next — usually at the worst time.
+*Enforced by:* Lint (`no-warning-comments` on changed lines) + Review.
+
+**R-Q2 — Tests required for business logic.**
+Services, permission logic, money math, event handlers, and gateway routing get unit tests (Vitest). Each roadmap phase's golden paths get Playwright coverage ([10_Roadmap.md](./10_Roadmap.md) §9). Trivial UI plumbing is exempt; anything with a branch worth reviewing is not.
+*Rationale:* untested business logic in a system holding other companies' money is negligence, not velocity.
+*Enforced by:* CI (coverage gate on service layers; required suites in branch protection) + Review.
+
+**R-Q3 — Code review required. No direct pushes.**
+Every change to `main` goes through a PR with at least one approval — including the CTO's changes. Review explicitly covers rules-compliance, security, and design-system conformance, not just "does it work".
+*Rationale:* solo-merged code is where tenant-isolation bugs live; review is the last human gate.
+*Enforced by:* CI (branch protection: required review, no admin bypass).
+
+**R-Q4 — Conventional commits, squash-merged.**
+`feat:`, `fix:`, `refactor:`, `docs:`, `chore:` with module scopes (`feat(finance): stripe payment links`). PRs squash-merge so `main` reads as a changelog.
+*Rationale:* machine-readable history powers changelogs, release notes, and archaeology.
+*Enforced by:* CI (commitlint on PR titles) + repo merge settings.
+
+**R-Q5 — CI must pass. Always.**
+The required suite: typecheck, lint, unit tests, RLS/permission adversarial suite, Playwright smoke, migration lint, schema-drift, duplication and cycle checks, secret scan, Semgrep, bundle budget, build. Red CI is never merged over. A flaky test is a P1 bug, not an inconvenience to be retried into submission.
+*Rationale:* a gate that can be skipped under pressure is not a gate — and pressure is exactly when the gate matters.
+*Enforced by:* CI (all checks required in branch protection).
+
+**R-Q6 — Errors are handled or propagated deliberately.**
+No empty `catch` blocks, no swallowed promise rejections. User-facing errors follow the content rules in [11_Design_Principles.md](./11_Design_Principles.md) §6/§11; unexpected errors reach Sentry with request context attached.
+*Rationale:* silent failure is the most expensive kind — it converts a bug report into a data-integrity investigation.
+*Enforced by:* Lint (`no-empty`, `no-floating-promises`) + Review.
 
 ## 7. Documentation (R-DOC)
 
-| # | Rule | Rationale | Enforcement |
-|---|---|---|---|
-| R-DOC1 | Every module has a doc — purpose, data model, permissions matrix, events emitted/consumed, AI surfaces — created with the module and kept in `docs/`. | Undocumented modules can't be reviewed, onboarded into, or sold. | Review (PR checklist) |
-| R-DOC2 | ADRs for architectural decisions in `docs/adr/` (numbered, immutable once accepted; superseded by new ADRs, never edited). Anything that would take >1 day to reverse gets an ADR: schema patterns, third-party choices, module boundaries, phase-gate decisions. | "Why is it like this?" must have an answer in the repo. | Review |
-| R-DOC3 | Docs update in the same PR as the change they describe — schema changes update the module doc; behavior changes update affected docs (01–15). A PR that outdates a doc without touching it is incomplete. | Docs updated "later" are updated never. | Review (PR template requires a docs statement) |
+**R-DOC1 — Every module has a doc.**
+Purpose, data model, permissions matrix, events emitted/consumed, and AI surfaces — created alongside the module in `docs/`, following the 01–15 numbering scheme.
+*Rationale:* an undocumented module cannot be reviewed properly, onboarded into, or sold to customers.
+*Enforced by:* Review (PR checklist item for new modules).
+
+**R-DOC2 — ADRs for architectural decisions.**
+Numbered Architecture Decision Records in `docs/adr/` for anything that would take more than a day to reverse: schema patterns, third-party choices, module boundaries, phase-gate outcomes. Accepted ADRs are immutable; they are superseded by new ADRs, never edited.
+*Rationale:* "why is it like this?" must have an answer in the repo, not in someone's memory.
+*Enforced by:* Review + roadmap governance ([10_Roadmap.md](./10_Roadmap.md) §11 requires ADRs at gates).
+
+**R-DOC3 — Docs update in the same PR as the change.**
+A schema change updates the module doc; a behavior change updates every affected doc (01–15). A PR that makes a doc wrong without touching it is incomplete.
+*Rationale:* documentation updated "later" is documentation updated never.
+*Enforced by:* Review (PR template requires an explicit docs-impact statement).
 
 ## 8. Naming conventions
 
@@ -98,28 +251,30 @@ These rules are **binding**. They exist because AurexOS is multi-tenant from day
 | Functions & variables | `camelCase` | `createInvoice`, `workspaceId` |
 | Types & interfaces | `PascalCase`, no `I`/`T` prefixes | `Invoice`, `WorkspaceMember` |
 | Constants (true constants) | `SCREAMING_SNAKE` | `MAX_UPLOAD_BYTES` |
-| DB tables/columns/functions | `snake_case`, tables plural | `workspace_members.deleted_at` |
+| DB tables / columns / functions | `snake_case`, tables plural | `workspace_members.deleted_at` |
 | Env vars | `SCREAMING_SNAKE` | `SUPABASE_SERVICE_ROLE_KEY` |
 | Domain events | `module.entity.verb` (past tense) | `finance.invoice.sent` |
 | Feature flags | `kebab-case`, module-prefixed | `ai-ghost-suggestions` |
 | Branches | `type/scope-summary` | `feat/finance-stripe-links` |
 | Zod schemas | `camelCase` + `Schema` suffix | `createInvoiceSchema` |
 
-Enforcement: Lint (filename + naming rules) + CI (migration linter for DB) + Review.
+*Enforced by:* Lint (filename and identifier rules) + CI (migration linter for DB identifiers) + Review.
 
-## 9. Enforcement summary
+## 9. Enforcement architecture
 
-- **Local**: pre-commit hooks run lint, typecheck, and secret scan on staged changes — fast feedback, but CI is the authority.
-- **CI (blocking)**: typecheck · ESLint (incl. boundary, `any`, env, SDK-import bans) · unit tests + coverage gate · RLS/permission adversarial suite · Playwright smoke · migration linter (RLS, `workspace_id`, `deleted_at`, UUIDv7, snake_case, money types) · schema-drift check · jscpd + madge · commitlint · gitleaks · Semgrep · bundle budget.
-- **Review (blocking)**: everything automation can't judge — layering intent, duplication judgment, permission correctness, doc completeness, design conformance. The PR template is a checklist keyed to rule IDs.
-- Rules without teeth are suggestions; when a rule proves unenforceable, we build the check or amend the rule — we don't quietly ignore it.
+- **Local:** pre-commit hooks run lint, typecheck, and secret scan on staged changes. Fast feedback — but local hooks are convenience; CI is the authority.
+- **CI (blocking):** the full R-Q5 suite. Every rule above that lists Lint or CI enforcement maps to a concrete named check; a rule whose check doesn't exist yet is tracked as an engineering task, not treated as satisfied.
+- **Review (blocking):** everything automation cannot judge — layering intent, duplication judgment, permission correctness, doc completeness, design conformance. The PR template checklist cites rule IDs so review is systematic, not vibes.
+- **Runtime:** RLS, DB grants, and the gateway/`defineAction` wrappers make the most critical rules (R-D1, R-D4, R-AI2, R-AI3) *impossible* to violate rather than merely detected.
+
+A rule without teeth is a suggestion. When a rule proves unenforceable in practice, we either build the missing check or amend the rule through §10 — we never quietly ignore it.
 
 ## 10. Rule change process
 
-1. **Propose** via PR against this document: the change, its rationale, and its enforcement plan (a rule that can't be enforced automatically must name its review criterion).
-2. **Decide**: founding CTO approves; any engineer can propose; objections are resolved in the PR, and significant changes get an ADR (R-DOC2) recording alternatives considered.
-3. **Version**: this document's version bumps on every change; the changelog lives in git history via conventional commits (`docs(rules): …`).
-4. **Migrate**: if existing code violates the new/changed rule, the PR must state the migration plan (fix now, or tracked issue with a deadline — never "eventually").
-5. **Emergency exceptions**: a rule may be bypassed only for a production incident, with a post-hoc PR comment citing the rule and an issue to restore compliance within one week.
+1. **Propose** via PR against this document: the change, its rationale, and its enforcement plan. A rule that cannot be enforced by Lint/CI/Runtime must name its concrete review criterion.
+2. **Decide:** any engineer can propose; the founding CTO approves. Objections are resolved in the PR thread. Significant changes get an ADR (R-DOC2) recording the alternatives considered.
+3. **Version:** this document's version bumps on every accepted change; history lives in git via `docs(rules): …` commits.
+4. **Migrate:** if existing code violates a new or changed rule, the proposing PR must state the migration plan — fix now, or a tracked issue with a deadline. "Eventually" is not a plan.
+5. **Emergency exceptions:** a rule may be bypassed only during a production incident, with a post-hoc note citing the rule and an issue restoring compliance within one week.
 
-Silence is not amendment: a rule that is being ignored is either enforced again or formally changed through this process — never left ambiguous.
+Silence is not amendment. A rule being ignored in practice is either re-enforced or formally changed through this process — never left ambiguous.
