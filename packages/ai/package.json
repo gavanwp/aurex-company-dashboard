@@ -1,0 +1,26 @@
+{
+  "name": "@aurexos/ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AurexOS AI layer: owned gateway (ADR-0006), model router, prompt manager, usage metering, memory/retrieval contracts. Headless — never imports UI. Provider SDK imports live ONLY here (R-AI1).",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@google/generative-ai": "^0.21.0",
+    "openai": "^4.77.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@aurexos/config": "workspace:*",
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
