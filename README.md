@@ -206,6 +206,17 @@ Until the codebase opens up, contributions follow these ground rules:
 
 Full detail, exit criteria, and phase gates: [`docs/10_Roadmap.md`](docs/10_Roadmap.md). The long-horizon vision: [`docs/15_Future_Ideas.md`](docs/15_Future_Ideas.md).
 
+## 🧰 Tooling
+
+Engineering governance from [`docs/12_Project_Rules.md`](docs/12_Project_Rules.md) is enforced mechanically:
+
+- **ESLint 9 (flat config)** — one shared preset in `packages/config/eslint`, consumed by the root `eslint.config.mjs`. It encodes the constitution's lintable rules (no `any`, no non-null assertions, no floating promises, no raw `process.env`, no TODO comments) and the import-boundary matrix from [`docs/13_Folder_Structure.md`](docs/13_Folder_Structure.md) §5 via `eslint-plugin-boundaries`, including the module public-surface rule (`modules/*/index.ts`).
+- **Husky + lint-staged** — `pre-commit` runs `eslint --fix` and Prettier on staged files; `commit-msg` runs commitlint.
+- **commitlint** — conventional commits with kebab-case module scopes and a 100-char header (R-Q4), configured in `commitlint.config.mjs`.
+- **Commands** — `pnpm lint` (per-package via Turborepo), `pnpm lint:root` (whole repo), `pnpm format`.
+
+Hooks install automatically via the root `prepare` script on `pnpm install`. Local hooks are convenience; CI is the authority (docs/12 §9).
+
 ---
 
 <div align="center">
