@@ -24,6 +24,23 @@ export const DOMAIN_EVENTS = [
   'crm.deal.updated',
   'crm.deal.stage_changed',
   'crm.deal.deleted',
+  'documents.document.published',
+  'kb.page.verified',
+  'finance.invoice.sent',
+  'finance.invoice.paid',
+  'finance.invoice.overdue',
+  'finance.expense.submitted',
+  'finance.expense.approved',
+  'proposals.proposal.sent',
+  'proposals.proposal.accepted',
+  'contracts.contract.signed',
+  'meetings.meeting.summarized',
+  'calendar.event.created',
+  'automation.run.completed',
+  'automation.run.failed',
+  'ai.run.completed',
+  'ai.approval.requested',
+  'ai.approval.decided',
 ] as const
 
 export type DomainEventType = (typeof DOMAIN_EVENTS)[number]
