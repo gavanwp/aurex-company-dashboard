@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -33,6 +34,7 @@
   },
   "devDependencies": {
     "@aurexos/config": "workspace:*",
+    "@playwright/test": "^1.49.1",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",

@@ -1,14 +1,24 @@
 name: CI
 
+# The R-Q5 blocking suite (12_Project_Rules.md §6), foundation slice:
+# format -> lint -> typecheck -> unit tests -> build, plus the RLS adversarial
+# suite (R-S7/R-D1) and the Playwright smoke path (R-Q2). Jobs are ordered
+# fast-fail; wall-time budget per DeploymentArchitecture.md §3. Later phases
+# add migration lint, schema drift, secret scan, Semgrep, bundle budget here —
+# this stays the ONE workflow.
+
 on:
   push:
     branches: [main]
   pull_request:
 
 jobs:
+  # ── Static gates + unit tests + build (R-Q1/R-Q2/R-Q4/R-Q5) ────────────────
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
+      # Build-time placeholders only — no live backend in this job.
       NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
       NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
       NEXT_PUBLIC_APP_URL: http://localhost:3000
@@ -21,5 +31,116 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm turbo typecheck
-      - run: pnpm turbo build
+
+      # R-Q4: conventional commits — PRs squash-merge, so the PR title becomes
+      # the commit on main; lint it with the repo's own commitlint config
+      # (commitlint.config.mjs) rather than a third-party action, so local
+      # husky hooks and CI can never disagree on the ruleset.
+      - name: Conventional PR title (R-Q4)
+        if: github.event_name == 'pull_request'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: printf '%s' "$PR_TITLE" | pnpm exec commitlint
+
+      # Fast-fail order: cheapest checks first (R-Q5 wall-time budget).
+      - name: Format (prettier)
+        run: pnpm exec prettier --check "**/*.{ts,tsx,md,json}"
+      - name: Lint (R-Q1 among others)
+        run: pnpm lint
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Unit tests — core + ai (R-Q2)
+        run: pnpm test
+      - name: Build
+        run: pnpm build
+
+  # ── RLS / tenancy adversarial suite (R-D1 + R-S7) ──────────────────────────
+  # Applies every migration + seed to a real local Postgres, then proves
+  # forbidden access FAILS: cross-tenant reads return zero rows, jobs is
+  # service-role only, anon sees nothing, and every table has RLS enabled.
+  # Independent of verify — schema bugs surface even when the app build breaks.
+  rls-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start local Supabase stack
+        run: supabase start
+      - name: Apply migrations + seed from scratch
+        run: supabase db reset
+      - name: Run RLS SQL tests (fail on any assertion)
+        run: |
+          shopt -s nullglob
+          files=(supabase/tests/*.sql)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No SQL tests found under supabase/tests — R-S7 requires them." >&2
+            exit 1
+          fi
+          for f in "${files[@]}"; do
+            echo "::group::$f"
+            psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+              -v ON_ERROR_STOP=1 -f "$f"
+            echo "::endgroup::"
+          done
+
+  # ── Playwright smoke (R-Q2: golden-path E2E; 08_Tech_Stack.md §8) ──────────
+  # Builds and serves the real app against a seeded local Supabase, then runs
+  # e2e/smoke.spec.ts only. Tenancy contract tests are test.fixme() skeletons
+  # in e2e/tenancy.spec.ts and are excluded automatically until the two-tenant
+  # seed fixtures land.
+  e2e-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: verify
+    env:
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start local Supabase (migrations + seed)
+        run: supabase start
+      - name: Export local Supabase env for the app build
+        run: |
+          eval "$(supabase status -o env)"
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY"
+          } >> "$GITHUB_ENV"
+      - name: Install chromium
+        run: pnpm --filter web exec playwright install --with-deps chromium
+      - name: Build web
+        run: pnpm turbo build --filter=web
+      - name: Start web and wait for readiness
+        run: |
+          pnpm --filter web start &
+          for i in $(seq 1 60); do
+            if curl -sf -o /dev/null http://localhost:3000/login; then
+              echo "web is up"; exit 0
+            fi
+            sleep 2
+          done
+          echo "web never became ready" >&2
+          exit 1
+      - name: Run smoke spec
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+        run: pnpm --filter web exec playwright test e2e/smoke.spec.ts
+      - name: Upload traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/test-results/
+          retention-days: 7
