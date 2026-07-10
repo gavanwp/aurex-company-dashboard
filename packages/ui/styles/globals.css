@@ -32,10 +32,32 @@
     /* Status */
     --destructive: 0 72% 45%;
     --destructive-foreground: 0 0% 98%;
+    --destructive-soft: 0 75% 95%;
+    --destructive-text: 0 72% 40%;
     --success: 142 72% 29%;
     --success-foreground: 0 0% 98%;
+    --success-soft: 142 55% 94%;
+    --success-text: 142 72% 26%;
     --warning: 38 92% 50%;
     --warning-foreground: 26 83% 14%;
+    --warning-soft: 38 90% 94%;
+    --warning-text: 30 92% 30%;
+    --info: 217 85% 46%;
+    --info-foreground: 0 0% 100%;
+    --info-soft: 217 85% 95%;
+    --info-text: 217 85% 38%;
+
+    /* Accent text — accent-colored text/links on app/surface (DesignTokens.md §2.4) */
+    --accent-text: 231 48% 44%;
+
+    /* Categorical chart ramp (Charts.md §2, ColorSystem.md §7).
+     * --chart-1 tracks --primary (Aurex Indigo) by definition. */
+    --chart-1: 231 48% 54%;
+    --chart-2: 172 66% 36%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 199 84% 44%;
+    --chart-5: 275 55% 58%;
+    --chart-6: 0 70% 55%;
 
     /* Lines & focus */
     --border: 240 6% 90%;
@@ -77,10 +99,32 @@
     /* Status — reduced saturation to avoid neon-on-black glare */
     --destructive: 0 62% 52%;
     --destructive-foreground: 0 0% 98%;
+    --destructive-soft: 0 45% 14%;
+    --destructive-text: 0 70% 70%;
     --success: 142 55% 45%;
     --success-foreground: 144 61% 8%;
+    --success-soft: 142 45% 13%;
+    --success-text: 142 55% 55%;
     --warning: 38 90% 55%;
     --warning-foreground: 26 83% 10%;
+    --warning-soft: 38 60% 13%;
+    --warning-text: 38 90% 62%;
+    --info: 217 75% 62%;
+    --info-foreground: 217 60% 10%;
+    --info-soft: 217 50% 15%;
+    --info-text: 217 75% 72%;
+
+    /* Accent text */
+    --accent-text: 231 70% 74%;
+
+    /* Categorical chart ramp — same hues, lifted L, reduced S (DarkMode.md).
+     * --chart-1 tracks --primary (Aurex Indigo) by definition. */
+    --chart-1: 231 48% 56%;
+    --chart-2: 172 58% 45%;
+    --chart-3: 38 85% 58%;
+    --chart-4: 199 75% 53%;
+    --chart-5: 275 50% 67%;
+    --chart-6: 0 62% 64%;
 
     /* Lines & focus */
     --border: 240 5% 16%;
@@ -139,6 +183,41 @@
 
   ::-webkit-scrollbar-corner {
     background: transparent;
+  }
+}
+
+/*
+ * Component keyframes consumed by packages/ui primitives via inline
+ * `animation` styles (chart.tsx indeterminate progress, ai/streaming-text.tsx
+ * caret, ai/thinking-indicator.tsx mark pulse). Durations respect the global
+ * reduced-motion collapse below (DesignTokens.md §9).
+ */
+@keyframes aurex-progress-indeterminate {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+
+@keyframes aurex-caret-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+@keyframes aurex-mark-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
   }
 }
 
