@@ -4,9 +4,13 @@
 -- Fixed UUIDs so tests and docs can reference entities stably.
 
 -- ── Demo user (auth) ─────────────────────────────────────────────────────────
+-- Token columns must be '' (not NULL): GoTrue scans them as strings, and a
+-- NULL breaks every login for the row with "Database error querying schema".
 insert into auth.users (
   id, instance_id, aud, role, email, encrypted_password,
-  email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+  email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+  confirmation_token, recovery_token, email_change, email_change_token_new,
+  email_change_token_current, phone_change, phone_change_token, reauthentication_token
 ) values (
   '00000000-0000-0000-0000-000000000001',
   '00000000-0000-0000-0000-000000000000',
@@ -16,7 +20,8 @@ insert into auth.users (
   now(),
   '{"provider":"email","providers":["email"]}',
   '{"full_name":"Demo Founder"}',
-  now(), now()
+  now(), now(),
+  '', '', '', '', '', '', '', ''
 ) on conflict (id) do nothing;
 
 insert into auth.identities (
