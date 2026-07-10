@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { PageHeader } from '@aurexos/ui/components/page-header'
 import { getWorkspaceContext } from '@/lib/workspace-context'
-import { WorkspaceSettings } from '@/modules/settings'
+import { SecuritySettings, WorkspaceSettings } from '@/modules/settings'
 
 export const metadata: Metadata = { title: 'Settings' }
 
@@ -10,8 +10,9 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Settings" description="Workspace, members, and permissions." />
+      <PageHeader title="Settings" description="Workspace, members, and security." />
       <WorkspaceSettings ctx={ctx} />
+      <SecuritySettings email={ctx.profile.email} />
     </div>
   )
 }

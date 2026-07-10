@@ -5,3 +5,5 @@ export { AppShell } from './components/app-shell'
 export type { AppShellProps, AppShellWorkspace } from './components/app-shell'
 export { CommandPalette } from './components/command-palette'
 export { ThemeProvider } from './components/theme-provider'
+// Auth actions other modules compose (settings → Security).
+export { changePassword, logoutEverywhere } from './actions/auth'

@@ -2,7 +2,9 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
 // Routes reachable without a session. Everything else requires auth.
-const PUBLIC_PATHS = ['/login', '/signup', '/auth'] as const
+// /reset-password is public on purpose: it detects the recovery session
+// in-page and shows a request-a-new-link state instead of bouncing.
+const PUBLIC_PATHS = ['/login', '/signup', '/forgot-password', '/reset-password', '/auth'] as const
 
 // Signed-in users have no business on these — bounce them to the OS.
 const AUTH_ONLY_PATHS = ['/login', '/signup'] as const

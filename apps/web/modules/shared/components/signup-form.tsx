@@ -18,6 +18,7 @@ import {
   CardTitle,
 } from '@aurexos/ui/components/card'
 import { signup } from '@/modules/shared/actions/auth'
+import { AuthDivider, OAuthButtons } from '@/modules/shared/components/oauth-buttons'
 
 const SignupFormSchema = z.object({
   fullName: z.string().min(1, 'Your name is required').max(120),
@@ -77,8 +78,12 @@ export function SignupForm() {
         <CardTitle>Create your account</CardTitle>
         <CardDescription>Start running your agency on AurexOS.</CardDescription>
       </CardHeader>
+      <CardContent className="space-y-4 pb-4">
+        <OAuthButtons />
+        <AuthDivider />
+      </CardContent>
       <form onSubmit={onSubmit} noValidate>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 pt-0">
           <div className="space-y-2">
             <Label htmlFor="fullName">Full name</Label>
             <Input id="fullName" autoComplete="name" placeholder="Ada Lovelace" {...register('fullName')} />
