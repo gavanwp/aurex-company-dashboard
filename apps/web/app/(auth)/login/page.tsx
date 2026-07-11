@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { LoginForm } from '@/modules/shared/components/login-form'
+import { LoginForm } from '@/modules/shared'
 
 export const metadata: Metadata = { title: 'Sign in' }
 

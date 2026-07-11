@@ -33,18 +33,35 @@ export interface UserMenuProps {
   role: WorkspaceRole
   /** Icon-only mode for the collapsed sidebar. */
   hideDetails?: boolean
+  /**
+   * Where the trigger lives: the sidebar footer (full-width row, menu opens
+   * up) or the top bar (compact row showing name + role, menu opens down).
+   */
+  placement?: 'sidebar' | 'topbar'
 }
 
-export function UserMenu({ profile, role, hideDetails = false }: UserMenuProps) {
+export function UserMenu({
+  profile,
+  role,
+  hideDetails = false,
+  placement = 'sidebar',
+}: UserMenuProps) {
   const { theme, setTheme } = useTheme()
   const [isPending, startTransition] = useTransition()
   const displayName = profile.fullName ?? profile.email
   const detailClass = hideDetails ? 'hidden' : 'hidden md:flex'
+  const roleLabel = role.replace(/_/g, ' ')
+  const topbar = placement === 'topbar'
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className="flex h-11 w-full items-center gap-2.5 rounded-md px-1.5 text-left text-sm outline-none transition-colors hover:bg-sidebar-accent/50 focus-visible:bg-sidebar-accent/50"
+        className={cn(
+          'flex items-center gap-2.5 rounded-md text-left text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring',
+          topbar
+            ? 'h-9 px-1.5 hover:bg-accent focus-visible:bg-accent'
+            : 'h-11 w-full px-1.5 hover:bg-sidebar-accent/50 focus-visible:bg-sidebar-accent/50',
+        )}
         aria-label="Account menu"
       >
         <Avatar className="size-7 shrink-0">
@@ -53,15 +70,30 @@ export function UserMenu({ profile, role, hideDetails = false }: UserMenuProps) 
         </Avatar>
         <span className={cn('min-w-0 flex-1 flex-col', detailClass)}>
           <span className="truncate text-sm font-medium leading-tight">{displayName}</span>
-          <span className="truncate text-xs text-sidebar-foreground/60">{profile.email}</span>
+          <span
+            className={cn(
+              'truncate text-xs',
+              topbar ? 'text-muted-foreground capitalize' : 'text-sidebar-foreground/60',
+            )}
+          >
+            {topbar ? roleLabel : profile.email}
+          </span>
         </span>
         <ChevronsUpDown
-          className={cn('size-4 shrink-0 text-sidebar-foreground/50', detailClass)}
+          className={cn(
+            'size-4 shrink-0',
+            topbar ? 'text-muted-foreground' : 'text-sidebar-foreground/50',
+            detailClass,
+          )}
           aria-hidden="true"
         />
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent side="top" align="start" className="w-56">
+      <DropdownMenuContent
+        side={topbar ? 'bottom' : 'top'}
+        align={topbar ? 'end' : 'start'}
+        className="w-56"
+      >
         <DropdownMenuLabel className="font-normal">
           <span className="block truncate text-sm font-medium">{displayName}</span>
           <span className="block truncate text-xs text-muted-foreground">

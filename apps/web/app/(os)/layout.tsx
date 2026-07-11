@@ -1,8 +1,9 @@
 import { getWorkspaceContext } from '@/lib/workspace-context'
-import { AppShell } from '@/modules/shared'
+import { AppShell, getShellNotifications } from '@/modules/shared'
 
 export default async function OsLayout({ children }: { children: React.ReactNode }) {
   const ctx = await getWorkspaceContext()
+  const notifications = await getShellNotifications(ctx)
 
   return (
     <AppShell
@@ -17,6 +18,7 @@ export default async function OsLayout({ children }: { children: React.ReactNode
         avatarUrl: ctx.profile.avatar_url,
       }}
       role={ctx.role}
+      notifications={notifications}
     >
       {children}
     </AppShell>

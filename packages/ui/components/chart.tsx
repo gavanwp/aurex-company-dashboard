@@ -1,11 +1,6 @@
 import * as React from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
-import {
-  AlertCircle,
-  ArrowDownRight,
-  ArrowRight,
-  ArrowUpRight,
-} from 'lucide-react'
+import { AlertCircle, ArrowDownRight, ArrowRight, ArrowUpRight } from 'lucide-react'
 
 import { cn } from '../lib/utils'
 import { Button } from './button'
@@ -41,8 +36,7 @@ export function chartSeriesColor(index: number): string {
  * ChartContainer — the chart anatomy shell (Charts.md §4)
  * ---------------------------------------------------------------------- */
 
-export interface ChartContainerProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+export interface ChartContainerProps extends React.HTMLAttributes<HTMLDivElement> {
   /** title-3, phrased as the subject of the chart's one question. */
   title: string
   /** Optional info tooltip slot (metric definition + source), rendered after the title. */
@@ -92,10 +86,7 @@ const ChartContainer = React.forwardRef<HTMLDivElement, ChartContainerProps>(
     let plot: React.ReactNode = children
     if (loading) {
       plot = (
-        <div
-          className="flex h-full flex-col justify-end gap-2"
-          aria-hidden="true"
-        >
+        <div className="flex h-full flex-col justify-end gap-2" aria-hidden="true">
           <Skeleton className="h-2/3 w-full" />
           <Skeleton className="h-3 w-1/2" />
         </div>
@@ -106,10 +97,7 @@ const ChartContainer = React.forwardRef<HTMLDivElement, ChartContainerProps>(
           role="alert"
           className="flex h-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-4 text-center"
         >
-          <AlertCircle
-            className="h-5 w-5 text-destructive"
-            aria-hidden="true"
-          />
+          <AlertCircle className="h-5 w-5 text-destructive" aria-hidden="true" />
           <p className="text-sm font-medium text-foreground">{error}</p>
           {onRetry ? (
             <Button variant="ghost" size="sm" onClick={onRetry}>
@@ -129,17 +117,12 @@ const ChartContainer = React.forwardRef<HTMLDivElement, ChartContainerProps>(
     return (
       <figure
         ref={ref}
-        className={cn(
-          'rounded-lg border bg-card p-6 text-card-foreground',
-          className,
-        )}
+        className={cn('rounded-lg border bg-card p-6 text-card-foreground', className)}
         {...props}
       >
         <figcaption className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-1.5">
-            <span className="text-sm font-semibold text-foreground">
-              {title}
-            </span>
+            <span className="text-sm font-semibold text-foreground">{title}</span>
             {info}
           </div>
           {timeframe ? (
@@ -148,9 +131,7 @@ const ChartContainer = React.forwardRef<HTMLDivElement, ChartContainerProps>(
             </div>
           ) : null}
         </figcaption>
-        {summary ? (
-          <div className="mt-1 flex items-baseline gap-2">{summary}</div>
-        ) : null}
+        {summary ? <div className="mt-1 flex items-baseline gap-2">{summary}</div> : null}
         <div className="mt-4" style={{ height: plotHeight }}>
           {plot}
         </div>
@@ -188,18 +169,7 @@ export interface SparklineProps extends React.SVGAttributes<SVGSVGElement> {
  * Trend context only; the number next to it is the primary read.
  */
 const Sparkline = React.forwardRef<SVGSVGElement, SparklineProps>(
-  (
-    {
-      className,
-      data,
-      width = 120,
-      height = 32,
-      strokeWidth = 1.5,
-      label,
-      ...props
-    },
-    ref,
-  ) => {
+  ({ className, data, width = 120, height = 32, strokeWidth = 1.5, label, ...props }, ref) => {
     if (data.length < 2) return null
 
     const pad = strokeWidth + 1.5
@@ -266,8 +236,7 @@ const progressBarVariants = cva('relative w-full overflow-hidden rounded-full bg
 })
 
 export interface ProgressBarProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof progressBarVariants> {
+  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof progressBarVariants> {
   /**
    * Real fraction 0–100. Omit for an honestly indeterminate sliding band —
    * only when the total is genuinely unknown (LoadingStates.md: never fake
@@ -286,10 +255,7 @@ export interface ProgressBarProps
  * adjacent and tabular. Indeterminate omits `aria-valuenow`.
  */
 const ProgressBar = React.forwardRef<HTMLDivElement, ProgressBarProps>(
-  (
-    { className, size, tone, value, label, 'aria-label': ariaLabel, ...props },
-    ref,
-  ) => {
+  ({ className, size, tone, value, label, 'aria-label': ariaLabel, ...props }, ref) => {
     const determinate = typeof value === 'number'
     const clamped = determinate ? Math.max(0, Math.min(100, value)) : 0
 
@@ -340,8 +306,7 @@ ProgressBar.displayName = 'ProgressBar'
  * ProgressRing — circular progress where geometry earns space (Charts.md §8)
  * ---------------------------------------------------------------------- */
 
-export interface ProgressRingProps
-  extends Omit<React.SVGAttributes<SVGSVGElement>, 'children'> {
+export interface ProgressRingProps extends Omit<React.SVGAttributes<SVGSVGElement>, 'children'> {
   /** Real fraction 0–100. Overflow caps at the full ring. */
   value: number
   /** Outer size in px. @default 32 */
@@ -360,10 +325,7 @@ export interface ProgressRingProps
  * space (avatars, compact tiles).
  */
 const ProgressRing = React.forwardRef<SVGSVGElement, ProgressRingProps>(
-  (
-    { className, value, size = 32, strokeWidth = 3, label, center, ...props },
-    ref,
-  ) => {
+  ({ className, value, size = 32, strokeWidth = 3, label, center, ...props }, ref) => {
     const clamped = Math.max(0, Math.min(100, value))
     const radius = (size - strokeWidth) / 2
     const circumference = 2 * Math.PI * radius
@@ -425,6 +387,322 @@ const ProgressRing = React.forwardRef<SVGSVGElement, ProgressRingProps>(
 ProgressRing.displayName = 'ProgressRing'
 
 /* -------------------------------------------------------------------------
+ * DonutChart — part-of-whole snapshot (Charts.md §3)
+ * ---------------------------------------------------------------------- */
+
+export interface DonutChartSegment {
+  /** Series label, e.g. "In progress". */
+  label: string
+  /** Absolute value. Zero-value segments draw nothing but stay in the data table. */
+  value: number
+  /**
+   * Hue as a CSS variable name from the token layer, e.g. `--chart-2`.
+   * Neutral tail categories may use `--muted-foreground` (Charts.md §2.2 —
+   * "Other" is neutral, never a seventh hue).
+   */
+  colorVar: string
+}
+
+export interface DonutChartProps extends React.HTMLAttributes<HTMLDivElement> {
+  data: DonutChartSegment[]
+  /** Outer diameter in px. @default 160 */
+  size?: number
+  /** Ring thickness in px. @default 14 */
+  thickness?: number
+  /**
+   * Concise text alternative, e.g. "Projects by status, 12 total".
+   * Required — the SVG is `role="img"`; the sr-only table is the canonical
+   * screen-reader path (Charts.md §10).
+   */
+  label: string
+  /** Center slot — typically the total (700 tabular numerals) + a caption. */
+  center?: React.ReactNode
+}
+
+/**
+ * Pure-SVG donut (Charts.md §3: max 5 segments + neutral Other, center
+ * shows the total, never exploded slices). Segments are stroked circle
+ * arcs via stroke-dasharray; a zero total renders a quiet neutral ring.
+ * Pair it with a sibling legend — the donut never carries labels alone.
+ */
+const DonutChart = React.forwardRef<HTMLDivElement, DonutChartProps>(
+  ({ className, data, size = 160, thickness = 14, label, center, ...props }, ref) => {
+    const total = data.reduce((sum, segment) => sum + Math.max(segment.value, 0), 0)
+    const radius = (size - thickness) / 2
+    const circumference = 2 * Math.PI * radius
+
+    let cumulative = 0
+    const arcs = data
+      .filter((segment) => segment.value > 0)
+      .map((segment) => {
+        const fraction = segment.value / total
+        const arc = {
+          ...segment,
+          dash: fraction * circumference,
+          offset: cumulative * circumference,
+        }
+        cumulative += fraction
+        return arc
+      })
+
+    return (
+      <div
+        ref={ref}
+        className={cn('relative shrink-0', className)}
+        style={{ width: size, height: size }}
+        {...props}
+      >
+        <svg
+          width={size}
+          height={size}
+          viewBox={`0 0 ${size} ${size}`}
+          role="img"
+          aria-label={label}
+        >
+          {total === 0 ? (
+            <circle
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              fill="none"
+              stroke="hsl(var(--border))"
+              strokeWidth={thickness}
+            />
+          ) : (
+            arcs.map((arc) => (
+              <circle
+                key={arc.label}
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                fill="none"
+                stroke={`hsl(var(${arc.colorVar}))`}
+                strokeWidth={thickness}
+                strokeDasharray={`${arc.dash} ${circumference - arc.dash}`}
+                strokeDashoffset={-arc.offset}
+                transform={`rotate(-90 ${size / 2} ${size / 2})`}
+              />
+            ))
+          )}
+        </svg>
+        {center ? (
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+            {center}
+          </div>
+        ) : null}
+        {/* Canonical screen-reader path: the same data as a real table. */}
+        <table className="sr-only">
+          <caption>{label}</caption>
+          <thead>
+            <tr>
+              <th scope="col">Category</th>
+              <th scope="col">Count</th>
+              <th scope="col">Share</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((segment) => (
+              <tr key={segment.label}>
+                <th scope="row">{segment.label}</th>
+                <td>{segment.value}</td>
+                <td>{total > 0 ? `${((segment.value / total) * 100).toFixed(1)}%` : '0%'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  },
+)
+DonutChart.displayName = 'DonutChart'
+
+/* -------------------------------------------------------------------------
+ * BarChart — comparison across short/temporal categories (Charts.md §3)
+ * ---------------------------------------------------------------------- */
+
+export interface BarChartDatum {
+  /** Tick label, e.g. "Feb". */
+  label: string
+  /** Quantity — the y-axis always starts at zero (Charts.md §1.4). */
+  value: number
+}
+
+export interface BarChartProps extends React.HTMLAttributes<HTMLDivElement> {
+  data: BarChartDatum[]
+  /** Plot region height in px (x-tick row renders below it). @default 160 */
+  plotHeight?: number
+  /** Series hue as a CSS variable name. @default '--chart-1' */
+  colorVar?: string
+  /**
+   * Concise text alternative, e.g. "Revenue by month, Jan–Jun 2026".
+   * Required — the sr-only table is the canonical screen-reader path.
+   */
+  label: string
+  /** Formats exact values in tooltips and the data table. */
+  formatValue?: (value: number) => string
+  /** Formats compact y-axis tick values. Defaults to `formatValue`. */
+  formatTick?: (value: number) => string
+}
+
+/** Smallest "nice" ceiling ≥ max, for honest round-numbered y ticks. */
+function niceCeiling(max: number): number {
+  if (max <= 0) return 1
+  const magnitude = 10 ** Math.floor(Math.log10(max))
+  for (const step of [1, 2, 4, 5, 8, 10]) {
+    if (step * magnitude >= max) return step * magnitude
+  }
+  return 10 * magnitude
+}
+
+/**
+ * Pure-SVG vertical bar chart (Charts.md §4): scaled rects (2px top
+ * radius), horizontal `--border` gridlines only, 12px muted tick text,
+ * 4 y ticks, and a CSS-driven hover/focus tooltip with exact tabular
+ * values — no charting library, no client JS. Bars appear complete: no
+ * intro animation (Charts.md §6.5).
+ */
+const BarChart = React.forwardRef<HTMLDivElement, BarChartProps>(
+  (
+    {
+      className,
+      data,
+      plotHeight = 160,
+      colorVar = '--chart-1',
+      label,
+      formatValue = (value) => String(value),
+      formatTick,
+      ...props
+    },
+    ref,
+  ) => {
+    const tickFormatter = formatTick ?? formatValue
+    const max = niceCeiling(Math.max(...data.map((d) => d.value), 0))
+    const divisions = 4
+    const ticks = Array.from({ length: divisions + 1 }, (_, i) => (max / divisions) * i)
+    const columnWidth = 100 / Math.max(data.length, 1)
+    const barWidth = columnWidth * 0.5
+
+    return (
+      <div ref={ref} className={cn('w-full', className)} {...props}>
+        <div className="flex gap-2" role="img" aria-label={label}>
+          {/* y-axis tick labels — small, muted, tabular; no axis line (§4). */}
+          <div
+            className="relative w-10 shrink-0 text-right"
+            style={{ height: plotHeight }}
+            aria-hidden="true"
+          >
+            {ticks.map((tick) => (
+              <span
+                key={tick}
+                className="absolute right-0 -translate-y-1/2 text-xs text-muted-foreground [font-variant-numeric:tabular-nums]"
+                style={{ top: plotHeight - (tick / max) * plotHeight }}
+              >
+                {tickFormatter(tick)}
+              </span>
+            ))}
+          </div>
+
+          <div className="relative min-w-0 flex-1">
+            <div className="relative" style={{ height: plotHeight }}>
+              {/* Horizontal gridlines only, border token (Charts.md §4). */}
+              {ticks.map((tick) => (
+                <div
+                  key={tick}
+                  className="absolute inset-x-0 border-t border-border"
+                  style={{ top: plotHeight - (tick / max) * plotHeight }}
+                  aria-hidden="true"
+                />
+              ))}
+
+              <svg className="absolute inset-0 h-full w-full overflow-visible" aria-hidden="true">
+                {data.map((datum, index) => {
+                  const barHeight = max > 0 ? (datum.value / max) * plotHeight : 0
+                  if (barHeight <= 0) return null
+                  return (
+                    <rect
+                      key={datum.label}
+                      x={`${index * columnWidth + (columnWidth - barWidth) / 2}%`}
+                      width={`${barWidth}%`}
+                      y={plotHeight - barHeight}
+                      height={barHeight}
+                      rx={2}
+                      fill={`hsl(var(${colorVar}))`}
+                    />
+                  )
+                })}
+              </svg>
+
+              {/* Hover/focus zones with CSS tooltips — nearest-column
+                  snapping, never pixel-perfect hover (Charts.md §6.1). */}
+              {data.map((datum, index) => {
+                const barHeight = max > 0 ? (datum.value / max) * plotHeight : 0
+                return (
+                  <div
+                    key={datum.label}
+                    tabIndex={0}
+                    aria-label={`${datum.label}: ${formatValue(datum.value)}`}
+                    className="group/bar absolute inset-y-0 rounded-sm outline-none transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring"
+                    style={{
+                      left: `${index * columnWidth}%`,
+                      width: `${columnWidth}%`,
+                    }}
+                  >
+                    <div
+                      className="pointer-events-none absolute left-1/2 z-10 hidden -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-md border bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md group-hover/bar:block group-focus-visible/bar:block"
+                      style={{
+                        top: Math.max(plotHeight - barHeight - 6, 20),
+                      }}
+                    >
+                      <span className="text-muted-foreground">{datum.label}</span>{' '}
+                      <span className="font-medium [font-variant-numeric:tabular-nums]">
+                        {formatValue(datum.value)}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* x ticks — never rotated (Charts.md §5). */}
+            <div className="mt-1.5 flex" aria-hidden="true">
+              {data.map((datum) => (
+                <span
+                  key={datum.label}
+                  className="min-w-0 truncate text-center text-xs text-muted-foreground"
+                  style={{ width: `${columnWidth}%` }}
+                >
+                  {datum.label}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Canonical screen-reader path: the same data as a real table. */}
+        <table className="sr-only">
+          <caption>{label}</caption>
+          <thead>
+            <tr>
+              <th scope="col">Period</th>
+              <th scope="col">Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((datum) => (
+              <tr key={datum.label}>
+                <th scope="row">{datum.label}</th>
+                <td>{formatValue(datum.value)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  },
+)
+BarChart.displayName = 'BarChart'
+
+/* -------------------------------------------------------------------------
  * DeltaBadge — arrow + sign + color + label, never color alone
  * (Charts.md §5 deltas, Components.md §4.8)
  * ---------------------------------------------------------------------- */
@@ -444,10 +722,7 @@ export interface DeltaBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   label: string
 }
 
-const deltaToneClasses: Record<
-  NonNullable<DeltaBadgeProps['tone']>,
-  string
-> = {
+const deltaToneClasses: Record<NonNullable<DeltaBadgeProps['tone']>, string> = {
   positive: 'text-success',
   negative: 'text-destructive',
   neutral: 'text-muted-foreground',
@@ -467,8 +742,7 @@ const deltaTrendIcons = {
 const DeltaBadge = React.forwardRef<HTMLSpanElement, DeltaBadgeProps>(
   ({ className, value, trend, tone, label, ...props }, ref) => {
     const resolvedTone =
-      tone ??
-      (trend === 'up' ? 'positive' : trend === 'down' ? 'negative' : 'neutral')
+      tone ?? (trend === 'up' ? 'positive' : trend === 'down' ? 'negative' : 'neutral')
     const Arrow = deltaTrendIcons[trend]
 
     return (
@@ -512,8 +786,7 @@ const healthDotVariants = cva('inline-block h-2 w-2 shrink-0 rounded-full', {
 })
 
 export interface HealthDotProps
-  extends React.HTMLAttributes<HTMLSpanElement>,
-    VariantProps<typeof healthDotVariants> {
+  extends React.HTMLAttributes<HTMLSpanElement>, VariantProps<typeof healthDotVariants> {
   /**
    * Required — a bare colored dot is a color-only signal and banned
    * (Charts.md §8, 11_Design_Principles.md §5). Rendered next to the dot;
@@ -536,9 +809,7 @@ const HealthDot = React.forwardRef<HTMLSpanElement, HealthDotProps>(
       {...props}
     >
       <span className={healthDotVariants({ status })} aria-hidden="true" />
-      <span className={cn(labelHidden ? 'sr-only' : 'text-muted-foreground')}>
-        {label}
-      </span>
+      <span className={cn(labelHidden ? 'sr-only' : 'text-muted-foreground')}>{label}</span>
     </span>
   ),
 )
@@ -547,6 +818,8 @@ HealthDot.displayName = 'HealthDot'
 export {
   ChartContainer,
   Sparkline,
+  DonutChart,
+  BarChart,
   ProgressBar,
   progressBarVariants,
   ProgressRing,

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { OnboardingForm } from '@/modules/shared/components/onboarding-form'
+import { OnboardingForm } from '@/modules/shared'
 
 export const metadata: Metadata = { title: 'Create your workspace' }
 

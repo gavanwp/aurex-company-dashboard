@@ -50,6 +50,11 @@
     /* Accent text — accent-colored text/links on app/surface (DesignTokens.md §2.4) */
     --accent-text: 231 48% 44%;
 
+    /* Accent soft — selected rows, active nav backgrounds, selection tints
+     * (ColorSystem.md §5 documented derivation: same hue at 95% L light). */
+    --accent-soft: 231 48% 95%;
+    --accent-soft-hover: 231 48% 92%;
+
     /* Categorical chart ramp (Charts.md §2, ColorSystem.md §7).
      * --chart-1 tracks --primary (Aurex Indigo) by definition. */
     --chart-1: 231 48% 54%;
@@ -116,6 +121,10 @@
 
     /* Accent text */
     --accent-text: 231 70% 74%;
+
+    /* Accent soft (ColorSystem.md §5: same hue at 17% L dark) */
+    --accent-soft: 231 48% 17%;
+    --accent-soft-hover: 231 48% 21%;
 
     /* Categorical chart ramp — same hues, lifted L, reduced S (DarkMode.md).
      * --chart-1 tracks --primary (Aurex Indigo) by definition. */

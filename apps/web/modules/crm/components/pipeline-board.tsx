@@ -51,9 +51,10 @@ export function PipelineBoard({ deals, clients, contacts, onCreateDeal }: Pipeli
   const [deleting, setDeleting] = React.useState<DealRow | null>(null)
   const [isDeleting, startDelete] = React.useTransition()
 
-  const effectiveDeals = deals.map((d) =>
-    overrides[d.id] && overrides[d.id] !== d.stage ? { ...d, stage: overrides[d.id]! } : d,
-  )
+  const effectiveDeals = deals.map((d) => {
+    const override = overrides[d.id]
+    return override && override !== d.stage ? { ...d, stage: override } : d
+  })
 
   function handleMove(deal: DealRow, to: DealStage) {
     if (deal.stage === to) return

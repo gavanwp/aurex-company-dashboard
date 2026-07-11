@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from '@aurexos/ui/components/card'
 import { createClient } from '@/lib/supabase/server'
-import { ResetPasswordForm } from '@/modules/shared/components/reset-password-form'
+import { ResetPasswordForm } from '@/modules/shared'
 
 export const metadata: Metadata = { title: 'Set a new password' }
 
@@ -40,7 +40,10 @@ export default async function ResetPasswordPage() {
           </Button>
           <p className="text-sm text-muted-foreground">
             Remembered it?{' '}
-            <Link href="/login" className="font-medium text-foreground underline-offset-4 hover:underline">
+            <Link
+              href="/login"
+              className="font-medium text-foreground underline-offset-4 hover:underline"
+            >
               Back to sign in
             </Link>
           </p>

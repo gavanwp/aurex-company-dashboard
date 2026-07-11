@@ -16,6 +16,9 @@ const EnvSchema = z.object({
 
 export type Env = z.infer<typeof EnvSchema>
 
+// Runtime mode, exposed here so feature code never touches process.env (R-S3).
+export const isProduction = process.env.NODE_ENV === 'production'
+
 let cached: Env | null = null
 
 export function getEnv(): Env {

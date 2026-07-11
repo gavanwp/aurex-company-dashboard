@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { ForgotPasswordForm } from '@/modules/shared/components/forgot-password-form'
+import { ForgotPasswordForm } from '@/modules/shared'
 
 export const metadata: Metadata = { title: 'Reset password' }
 

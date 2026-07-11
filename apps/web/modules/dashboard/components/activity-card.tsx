@@ -1,51 +1,57 @@
-import { Activity } from 'lucide-react'
-import { initialsOf } from '@aurexos/core'
-import { Avatar, AvatarFallback, AvatarImage } from '@aurexos/ui/components/avatar'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@aurexos/ui/components/card'
+  Activity,
+  Building2,
+  FolderKanban,
+  Handshake,
+  ListChecks,
+  type LucideIcon,
+} from 'lucide-react'
+import { Card } from '@aurexos/ui/components/card'
 import { EmptyState } from '@aurexos/ui/components/empty-state'
 import type { DashboardActivity } from '../queries/get-dashboard'
 
+/** Source-module icon per event namespace — module identity, not decoration. */
+const SOURCE_ICONS: Record<string, LucideIcon> = {
+  tasks: ListChecks,
+  projects: FolderKanban,
+  crm: Handshake,
+  workspace: Building2,
+}
+
 export function ActivityCard({ activity }: { activity: DashboardActivity[] }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Recent activity</CardTitle>
-        <CardDescription>The latest changes across this workspace.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {activity.length === 0 ? (
-          <EmptyState
-            icon={Activity}
-            title="No activity yet"
-            description="Changes made across the workspace will appear here."
-            className="min-h-[220px]"
-          />
-        ) : (
-          <ul className="space-y-4">
-            {activity.map((event) => (
+    <Card className="flex flex-col p-4">
+      <h3 className="text-[15px] font-semibold leading-[22px] text-foreground">Recent activity</h3>
+
+      {activity.length === 0 ? (
+        <EmptyState
+          icon={Activity}
+          title="No activity yet"
+          description="Changes made across the workspace will appear here."
+          className="mt-4 min-h-[160px] p-6"
+        />
+      ) : (
+        <ul className="mt-2 space-y-3">
+          {activity.map((event) => {
+            const Icon = SOURCE_ICONS[event.source] ?? Activity
+            return (
               <li key={event.id} className="flex items-center gap-3">
-                <Avatar className="size-7">
-                  {event.actorAvatarUrl ? <AvatarImage src={event.actorAvatarUrl} alt="" /> : null}
-                  <AvatarFallback className="text-[10px]">
-                    {initialsOf(event.actorName ?? 'Someone')}
-                  </AvatarFallback>
-                </Avatar>
+                <span
+                  className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground"
+                  aria-hidden="true"
+                >
+                  <Icon className="size-4" />
+                </span>
                 <p className="min-w-0 flex-1 truncate text-sm">
                   <span className="font-medium">{event.actorName ?? 'Someone'}</span>{' '}
                   <span className="text-muted-foreground">{event.sentence}</span>
                 </p>
                 <span className="shrink-0 text-xs text-muted-foreground">{event.timeAgo}</span>
               </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
+            )
+          })}
+        </ul>
+      )}
     </Card>
   )
 }

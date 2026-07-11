@@ -4,6 +4,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { CreateWorkspaceInput, type DomainEventType } from '@aurexos/core'
 import type { TablesInsert } from '@aurexos/db'
+import { isProduction } from '@/lib/env'
 import { createClient } from '@/lib/supabase/server'
 import { WORKSPACE_COOKIE } from '@/lib/workspace-context'
 import type { ActionResult } from '@/lib/action-kit'
@@ -42,7 +43,7 @@ export async function createWorkspace(name: string): Promise<ActionResult> {
     maxAge: ONE_YEAR_SECONDS,
     sameSite: 'lax',
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isProduction,
   })
 
   const eventType: DomainEventType = 'workspace.created'
