@@ -12,7 +12,11 @@ import {
 } from '@aurexos/core'
 import type { Tables, TablesInsert, TablesUpdate } from '@aurexos/db'
 import { ActionError, emitDomainEvent, writeAudit, type ActionResult } from '@/lib/action-kit'
+import { revokeGmailToken } from '@/lib/gmail-oauth'
+import { decryptTokenBundle } from '@/lib/mailbox-crypto'
 import { getWorkspaceContext, type WorkspaceContext } from '@/lib/workspace-context'
+import { GmailSyncError, syncMailbox, type SyncMailboxResult } from '../lib/gmail-sync'
+import { GMAIL_ERROR_FALLBACK, mapGmailErrorCode } from '../types'
 
 // Capability note: the can() map has no email.* capabilities yet (they land
 // with the capability-map expansion alongside the sync worker). Until then the
@@ -420,6 +424,77 @@ export async function saveDraft(
     })
     revalidateEmail()
     return { ok: true, data: { id: draft.id } }
+  } catch (err) {
+    return failure(err)
+  }
+}
+
+/**
+ * Manually re-run a Gmail mailbox sync (owner-only, enforced in syncMailbox's
+ * connection load + RLS). Import errors surface as human copy, never Google
+ * error bodies or token material.
+ */
+export async function syncMailboxNow(
+  connectionId: string,
+): Promise<ActionResult<SyncMailboxResult>> {
+  try {
+    const ctx = await requireEmailAccess()
+    const result = await syncMailbox(ctx, connectionId)
+    revalidateEmail()
+    return { ok: true, data: result }
+  } catch (err) {
+    if (err instanceof GmailSyncError) {
+      return { ok: false, error: mapGmailErrorCode(err.code) ?? GMAIL_ERROR_FALLBACK }
+    }
+    return failure(err)
+  }
+}
+
+/**
+ * Disconnect a Gmail mailbox: best-effort token revocation at Google, then
+ * null the stored ciphertext and flip status to 'disconnected'. Synced threads
+ * stay on the timeline; reconnecting resumes syncing.
+ */
+export async function disconnectMailbox(connectionId: string): Promise<ActionResult> {
+  try {
+    const ctx = await requireEmailAccess()
+
+    const { data: connection } = await ctx.supabase
+      .from('mailbox_connections')
+      .select('id, oauth_token_ciphertext')
+      .eq('id', connectionId)
+      .eq('workspace_id', ctx.workspace.id)
+      .eq('user_id', ctx.userId)
+      .eq('provider', 'gmail')
+      .is('deleted_at', null)
+      .maybeSingle()
+    if (!connection) return { ok: false, error: "That mailbox isn't connected." }
+
+    if (connection.oauth_token_ciphertext) {
+      // Courtesy revoke — never blocks the local disconnect, never surfaces tokens.
+      try {
+        const bundle = decryptTokenBundle(connection.oauth_token_ciphertext)
+        await revokeGmailToken(bundle.refresh_token)
+      } catch {
+        // Ignore: the local disconnect below is the source of truth.
+      }
+    }
+
+    const { error } = await ctx.supabase
+      .from('mailbox_connections')
+      .update({ oauth_token_ciphertext: null, status: 'disconnected', sync_cursor: null })
+      .eq('id', connectionId)
+      .eq('workspace_id', ctx.workspace.id)
+    if (error) return { ok: false, error: 'Could not disconnect the mailbox' }
+
+    await writeAudit(ctx, {
+      action: 'email.mailbox.disconnected',
+      entityType: 'mailbox_connection',
+      entityId: connectionId,
+      after: { note: 'gmail disconnect' },
+    })
+    revalidateEmail()
+    return { ok: true, data: undefined }
   } catch (err) {
     return failure(err)
   }

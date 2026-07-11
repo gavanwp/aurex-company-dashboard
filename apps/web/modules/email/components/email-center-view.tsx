@@ -7,6 +7,7 @@ import { Button } from '@aurexos/ui/components/button'
 import { Card, CardContent } from '@aurexos/ui/components/card'
 import { PageHeader } from '@aurexos/ui/components/page-header'
 import { Tabs, TabsList, TabsTrigger } from '@aurexos/ui/components/tabs'
+import { cn } from '@aurexos/ui/lib/utils'
 import {
   isEmailStatusTab,
   type EmailLinkOptions,
@@ -26,6 +27,10 @@ export interface EmailCenterViewProps {
   connections: MailboxConnectionRow[]
   options: EmailLinkOptions
   statusTab: EmailStatusTab
+  /** Whether the Google OAuth app is configured for this deployment. */
+  gmailConfigured: boolean
+  /** Post-redirect notice from the OAuth callback (success or human error). */
+  notice: { tone: 'success' | 'error'; message: string } | null
 }
 
 export function EmailCenterView({
@@ -34,11 +39,13 @@ export function EmailCenterView({
   connections,
   options,
   statusTab,
+  gmailConfigured,
+  notice,
 }: EmailCenterViewProps) {
   const router = useRouter()
   const [logOpen, setLogOpen] = React.useState(false)
 
-  const hasOauthMailbox = connections.some((c) => c.provider !== 'manual')
+  const gmailConnection = connections.find((c) => c.provider === 'gmail') ?? null
 
   function navigate(tab: EmailStatusTab, threadId: string | null) {
     const params = new URLSearchParams()
@@ -61,7 +68,21 @@ export function EmailCenterView({
         }
       />
 
-      {hasOauthMailbox ? null : <ConnectMailboxCard />}
+      {notice ? (
+        <div
+          role="status"
+          className={cn(
+            'rounded-lg border px-4 py-3 text-sm',
+            notice.tone === 'success'
+              ? 'border-success/30 bg-success/10 text-foreground'
+              : 'border-destructive/30 bg-destructive/10 text-foreground',
+          )}
+        >
+          {notice.message}
+        </div>
+      ) : null}
+
+      <ConnectMailboxCard configured={gmailConfigured} connection={gmailConnection} />
 
       <Tabs
         value={statusTab}

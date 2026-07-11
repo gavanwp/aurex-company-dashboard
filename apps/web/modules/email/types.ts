@@ -91,6 +91,35 @@ export const THREAD_STATUS_BADGE_VARIANT: Record<
   closed: 'success-soft',
 }
 
+// ── Gmail connect-flow notices ───────────────────────────────────────────────
+// Human copy for /email?connected=1 and /email?error=gmail_* (ErrorStates.md
+// §8 style: what happened → what to do; no raw codes, no Google error bodies).
+
+export const GMAIL_CONNECTED_COPY =
+  'Gmail connected — your recent conversations are on the timeline. New threads stay private until you share them.'
+
+const GMAIL_ERROR_COPY: Record<string, string> = {
+  gmail_not_configured:
+    "Gmail connections aren't available yet — the Google integration hasn't been configured for this workspace.",
+  gmail_forbidden: "Portal accounts can't connect a mailbox — ask a workspace member to do it.",
+  gmail_state: "We couldn't verify that connection attempt — start the connection again from here.",
+  gmail_denied: 'Google access was declined — nothing was connected. Try again whenever you like.',
+  gmail_exchange: "Google didn't complete the connection — try connecting again in a moment.",
+  gmail_auth: 'Gmail authorization is no longer valid — reconnect your mailbox to resume syncing.',
+  gmail_not_connected: "That mailbox isn't connected anymore — connect Gmail to start syncing.",
+  gmail_sync_failed:
+    'Your mailbox is connected, but the last sync hit a problem — use "Sync now" to retry.',
+}
+
+/** Last-resort copy when the failure code is unknown to us. */
+export const GMAIL_ERROR_FALLBACK = "Couldn't complete that — try again in a moment."
+
+/** Map a gmail_* error code (e.g. from a callback query param) to human copy. */
+export function mapGmailErrorCode(code: string | null | undefined): string | null {
+  if (!code || !code.startsWith('gmail_')) return null
+  return GMAIL_ERROR_COPY[code] ?? GMAIL_ERROR_FALLBACK
+}
+
 export function participantSummary(participants: EmailParticipant[]): string {
   if (participants.length === 0) return 'No participants'
   const names = participants.map((p) => p.name || p.email)

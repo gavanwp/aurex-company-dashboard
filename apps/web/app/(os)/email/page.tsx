@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { isGmailConfigured } from '@/lib/env'
 import { getWorkspaceContext } from '@/lib/workspace-context'
 import {
   EmailCenterView,
@@ -6,7 +7,9 @@ import {
   getMailboxConnections,
   getThread,
   getThreads,
+  GMAIL_CONNECTED_COPY,
   isEmailStatusTab,
+  mapGmailErrorCode,
 } from '@/modules/email'
 
 export const metadata: Metadata = { title: 'Email' }
@@ -14,9 +17,9 @@ export const metadata: Metadata = { title: 'Email' }
 export default async function EmailPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; thread?: string }>
+  searchParams: Promise<{ status?: string; thread?: string; connected?: string; error?: string }>
 }) {
-  const { status, thread } = await searchParams
+  const { status, thread, connected, error } = await searchParams
   const ctx = await getWorkspaceContext()
 
   const statusTab = isEmailStatusTab(status) ? status : 'all'
@@ -28,6 +31,13 @@ export default async function EmailPage({
     thread ? getThread(ctx, thread) : Promise.resolve(null),
   ])
 
+  const errorMessage = mapGmailErrorCode(error)
+  const notice = connected
+    ? ({ tone: 'success', message: GMAIL_CONNECTED_COPY } as const)
+    : errorMessage
+      ? ({ tone: 'error', message: errorMessage } as const)
+      : null
+
   return (
     <EmailCenterView
       threads={threads}
@@ -35,6 +45,8 @@ export default async function EmailPage({
       connections={connections}
       options={options}
       statusTab={statusTab}
+      gmailConfigured={isGmailConfigured()}
+      notice={notice}
     />
   )
 }

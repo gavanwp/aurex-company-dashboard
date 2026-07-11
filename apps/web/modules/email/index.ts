@@ -1,7 +1,12 @@
 // Public surface of modules/email (13_Folder_Structure.md §3).
 
 export { EmailCenterView } from './components/email-center-view'
-export { isEmailStatusTab, type EmailStatusTab } from './types'
+export {
+  GMAIL_CONNECTED_COPY,
+  isEmailStatusTab,
+  mapGmailErrorCode,
+  type EmailStatusTab,
+} from './types'
 export { ConnectMailboxCard } from './components/connect-mailbox-card'
 export { LogEmailDialog } from './components/log-email-dialog'
 export {
@@ -11,6 +16,8 @@ export {
   getThreads,
   type GetThreadsFilters,
 } from './queries/get-email'
+// Server-only Gmail sync engine, exposed for the OAuth callback route handler.
+export { GmailSyncError, syncMailbox, type SyncMailboxResult } from './lib/gmail-sync'
 export type {
   EmailLinkOptions,
   LinkOption,
