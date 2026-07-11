@@ -12,15 +12,7 @@
 type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type WorkspaceRoleDb =
-  | 'owner'
-  | 'admin'
-  | 'project_manager'
-  | 'member'
-  | 'sales'
-  | 'finance'
-  | 'hr'
-  | 'client'
-  | 'guest'
+  'owner' | 'admin' | 'project_manager' | 'member' | 'sales' | 'finance' | 'hr' | 'client' | 'guest'
 
 export type MemberSpecializationDb = 'developer' | 'designer' | 'seo' | 'content' | 'marketing'
 export type ClientStatusDb = 'prospect' | 'active' | 'paused' | 'churned'
@@ -42,38 +34,18 @@ export type AiApprovalDecisionDb = 'approved' | 'rejected'
 export type MemoryScopeDb = 'user' | 'workspace'
 export type MemoryKindDb = 'preference' | 'fact' | 'instruction'
 export type EmbeddingSourceTypeDb =
-  | 'document'
-  | 'kb_page'
-  | 'meeting'
-  | 'email'
-  | 'file'
-  | 'task'
-  | 'project'
-  | 'client'
+  'document' | 'kb_page' | 'meeting' | 'email' | 'file' | 'task' | 'project' | 'client'
 export type InvoiceStatusDb = 'draft' | 'sent' | 'viewed' | 'partial' | 'paid' | 'overdue' | 'void'
 export type InvoiceScheduleSourceDb = 'contract' | 'retainer' | 'milestones'
 export type InvoiceScheduleCadenceDb = 'weekly' | 'monthly' | 'quarterly' | 'yearly' | 'milestone'
 export type ExpenseApprovalStatusDb = 'pending' | 'approved' | 'rejected'
 export type PaymentMethodDb = 'stripe' | 'bank' | 'manual'
 export type ProposalStatusDb =
-  | 'draft'
-  | 'internal_review'
-  | 'sent'
-  | 'viewed'
-  | 'accepted'
-  | 'declined'
-  | 'expired'
+  'draft' | 'internal_review' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'expired'
 export type ProposalAcceptMethodDb = 'esign' | 'checkbox'
 export type ContractTypeDb = 'msa' | 'sow' | 'nda' | 'retainer' | 'employment' | 'custom'
 export type ContractStatusDb =
-  | 'draft'
-  | 'review'
-  | 'sent'
-  | 'signed'
-  | 'active'
-  | 'expiring'
-  | 'expired'
-  | 'terminated'
+  'draft' | 'review' | 'sent' | 'signed' | 'active' | 'expiring' | 'expired' | 'terminated'
 export type MeetingTypeDb = 'internal' | 'client' | 'sales' | 'standup'
 export type MeetingStatusDb = 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
 export type CalendarEventSourceDb = 'native' | 'synced' | 'system'
@@ -81,6 +53,12 @@ export type AutomationStatusDb = 'draft' | 'active' | 'paused'
 export type AutomationScopeDb = 'workspace' | 'project' | 'module'
 export type AutomationRunStatusDb = 'running' | 'succeeded' | 'failed' | 'cancelled'
 export type JobStatusDb = 'pending' | 'running' | 'succeeded' | 'failed' | 'dead'
+export type MailboxProviderDb = 'gmail' | 'microsoft' | 'manual'
+export type MailboxStatusDb = 'connected' | 'error' | 'disconnected'
+export type MailboxSharingPolicyDb = 'private' | 'shared'
+export type EmailThreadStatusDb = 'open' | 'waiting' | 'closed'
+export type EmailThreadVisibilityDb = 'private' | 'workspace'
+export type EmailDirectionDb = 'inbound' | 'outbound'
 
 export interface Database {
   public: {
@@ -1819,6 +1797,174 @@ export interface Database {
           last_error?: string | null
           created_at?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      mailbox_connections: {
+        Row: {
+          id: string
+          workspace_id: string
+          user_id: string
+          provider: MailboxProviderDb
+          address: string
+          display_name: string | null
+          status: MailboxStatusDb
+          sync_cursor: string | null
+          sharing_policy: MailboxSharingPolicyDb
+          oauth_token_ciphertext: string | null
+          last_synced_at: string | null
+          created_at: string
+          updated_at: string
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          user_id: string
+          provider?: MailboxProviderDb
+          address: string
+          display_name?: string | null
+          status?: MailboxStatusDb
+          sync_cursor?: string | null
+          sharing_policy?: MailboxSharingPolicyDb
+          oauth_token_ciphertext?: string | null
+          last_synced_at?: string | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          user_id?: string
+          provider?: MailboxProviderDb
+          address?: string
+          display_name?: string | null
+          status?: MailboxStatusDb
+          sync_cursor?: string | null
+          sharing_policy?: MailboxSharingPolicyDb
+          oauth_token_ciphertext?: string | null
+          last_synced_at?: string | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Relationships: []
+      }
+      email_threads: {
+        Row: {
+          id: string
+          workspace_id: string
+          subject: string
+          snippet: string | null
+          participants: Json
+          last_message_at: string | null
+          message_count: number
+          status: EmailThreadStatusDb
+          visibility: EmailThreadVisibilityDb
+          mailbox_connection_id: string | null
+          client_id: string | null
+          contact_id: string | null
+          project_id: string | null
+          deal_id: string | null
+          created_at: string
+          updated_at: string
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          subject: string
+          snippet?: string | null
+          participants?: Json
+          last_message_at?: string | null
+          message_count?: number
+          status?: EmailThreadStatusDb
+          visibility?: EmailThreadVisibilityDb
+          mailbox_connection_id?: string | null
+          client_id?: string | null
+          contact_id?: string | null
+          project_id?: string | null
+          deal_id?: string | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          subject?: string
+          snippet?: string | null
+          participants?: Json
+          last_message_at?: string | null
+          message_count?: number
+          status?: EmailThreadStatusDb
+          visibility?: EmailThreadVisibilityDb
+          mailbox_connection_id?: string | null
+          client_id?: string | null
+          contact_id?: string | null
+          project_id?: string | null
+          deal_id?: string | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Relationships: []
+      }
+      email_messages: {
+        Row: {
+          id: string
+          workspace_id: string
+          thread_id: string
+          direction: EmailDirectionDb
+          from_address: string
+          to_addresses: Json
+          cc_addresses: Json
+          subject: string | null
+          body_text: string | null
+          body_html_sanitized: string | null
+          provider_message_id: string | null
+          sent_at: string | null
+          is_draft: boolean
+          created_at: string
+          updated_at: string
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          thread_id: string
+          direction: EmailDirectionDb
+          from_address: string
+          to_addresses?: Json
+          cc_addresses?: Json
+          subject?: string | null
+          body_text?: string | null
+          body_html_sanitized?: string | null
+          provider_message_id?: string | null
+          sent_at?: string | null
+          is_draft?: boolean
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          thread_id?: string
+          direction?: EmailDirectionDb
+          from_address?: string
+          to_addresses?: Json
+          cc_addresses?: Json
+          subject?: string | null
+          body_text?: string | null
+          body_html_sanitized?: string | null
+          provider_message_id?: string | null
+          sent_at?: string | null
+          is_draft?: boolean
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
         }
         Relationships: []
       }
