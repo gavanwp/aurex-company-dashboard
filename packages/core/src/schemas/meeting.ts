@@ -47,10 +47,15 @@ export const CreateMeetingInput = z.object({
   type: z.enum(MEETING_TYPES).default('internal'),
   projectId: z.string().uuid().nullable().optional(),
   dealId: z.string().uuid().nullable().optional(),
+  clientId: z.string().uuid().nullable().optional(),
   calendarEventId: z.string().uuid().nullable().optional(),
   attendees: MeetingAttendeesSchema.default([]),
   agenda: MeetingAgendaSchema.default([]),
   status: z.enum(MEETING_STATUSES).default('scheduled'),
+  // Standalone timing (0014): used when the meeting carries no calendar_event.
+  startsAt: z.string().nullable().optional(),
+  endsAt: z.string().nullable().optional(),
+  location: z.string().max(500).nullable().optional(),
 })
 export type CreateMeetingInput = z.infer<typeof CreateMeetingInput>
 
@@ -58,6 +63,44 @@ export const UpdateMeetingInput = CreateMeetingInput.partial().extend({
   id: z.string().uuid(),
 })
 export type UpdateMeetingInput = z.infer<typeof UpdateMeetingInput>
+
+// ── First-class decisions + action items (0014) ─────────────────────────────
+// These govern the human-curated rows in meeting_decisions / meeting_action_items
+// (distinct from the AI-output jsonb on meeting_summaries above): a decision is a
+// searchable log entry, an action item is trackable and convertible to a task.
+
+export const CreateMeetingDecisionInput = z.object({
+  meetingId: z.string().uuid(),
+  statement: z.string().min(1, 'Decision statement is required').max(2_000),
+  decidedBy: z.string().max(200).nullable().optional(),
+  context: z.string().max(5_000).nullable().optional(),
+})
+export type CreateMeetingDecisionInput = z.infer<typeof CreateMeetingDecisionInput>
+
+export const MEETING_ACTION_ITEM_STATUSES = [
+  'proposed',
+  'accepted',
+  'converted',
+  'dismissed',
+] as const
+export type MeetingActionItemStatus = (typeof MEETING_ACTION_ITEM_STATUSES)[number]
+
+export const CreateMeetingActionItemInput = z.object({
+  meetingId: z.string().uuid(),
+  description: z.string().min(1, 'Action item is required').max(1_000),
+  assigneeUserId: z.string().uuid().nullable().optional(),
+  dueDate: z.string().date().nullable().optional(),
+})
+export type CreateMeetingActionItemInput = z.infer<typeof CreateMeetingActionItemInput>
+
+export const UpdateMeetingActionItemInput = z.object({
+  id: z.string().uuid(),
+  description: z.string().min(1).max(1_000).optional(),
+  assigneeUserId: z.string().uuid().nullable().optional(),
+  dueDate: z.string().date().nullable().optional(),
+  status: z.enum(['proposed', 'accepted', 'dismissed']).optional(),
+})
+export type UpdateMeetingActionItemInput = z.infer<typeof UpdateMeetingActionItemInput>
 
 // Governs meeting_summaries.decisions (0010).
 export const MeetingDecisionSchema = z.object({

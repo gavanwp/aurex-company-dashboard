@@ -48,6 +48,7 @@ export type ContractStatusDb =
   'draft' | 'review' | 'sent' | 'signed' | 'active' | 'expiring' | 'expired' | 'terminated'
 export type MeetingTypeDb = 'internal' | 'client' | 'sales' | 'standup'
 export type MeetingStatusDb = 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
+export type MeetingActionItemStatusDb = 'proposed' | 'accepted' | 'converted' | 'dismissed'
 export type CalendarEventSourceDb = 'native' | 'synced' | 'system'
 export type AutomationStatusDb = 'draft' | 'active' | 'paused'
 export type AutomationScopeDb = 'workspace' | 'project' | 'module'
@@ -1532,12 +1533,17 @@ export interface Database {
           type: MeetingTypeDb
           project_id: string | null
           deal_id: string | null
+          client_id: string | null
           calendar_event_id: string | null
           attendees: Json
           agenda: Json
           status: MeetingStatusDb
           recording_file_id: string | null
           transcript_file_id: string | null
+          notes: string | null
+          location: string | null
+          starts_at: string | null
+          ends_at: string | null
           created_at: string
           updated_at: string
           deleted_at: string | null
@@ -1549,12 +1555,17 @@ export interface Database {
           type?: MeetingTypeDb
           project_id?: string | null
           deal_id?: string | null
+          client_id?: string | null
           calendar_event_id?: string | null
           attendees?: Json
           agenda?: Json
           status?: MeetingStatusDb
           recording_file_id?: string | null
           transcript_file_id?: string | null
+          notes?: string | null
+          location?: string | null
+          starts_at?: string | null
+          ends_at?: string | null
           created_at?: string
           updated_at?: string
           deleted_at?: string | null
@@ -1566,12 +1577,95 @@ export interface Database {
           type?: MeetingTypeDb
           project_id?: string | null
           deal_id?: string | null
+          client_id?: string | null
           calendar_event_id?: string | null
           attendees?: Json
           agenda?: Json
           status?: MeetingStatusDb
           recording_file_id?: string | null
           transcript_file_id?: string | null
+          notes?: string | null
+          location?: string | null
+          starts_at?: string | null
+          ends_at?: string | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Relationships: []
+      }
+      meeting_decisions: {
+        Row: {
+          id: string
+          workspace_id: string
+          meeting_id: string
+          statement: string
+          decided_by: string | null
+          context: string | null
+          created_at: string
+          updated_at: string
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          meeting_id: string
+          statement: string
+          decided_by?: string | null
+          context?: string | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          meeting_id?: string
+          statement?: string
+          decided_by?: string | null
+          context?: string | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Relationships: []
+      }
+      meeting_action_items: {
+        Row: {
+          id: string
+          workspace_id: string
+          meeting_id: string
+          description: string
+          assignee_user_id: string | null
+          due_date: string | null
+          status: MeetingActionItemStatusDb
+          task_id: string | null
+          created_at: string
+          updated_at: string
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          meeting_id: string
+          description: string
+          assignee_user_id?: string | null
+          due_date?: string | null
+          status?: MeetingActionItemStatusDb
+          task_id?: string | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          meeting_id?: string
+          description?: string
+          assignee_user_id?: string | null
+          due_date?: string | null
+          status?: MeetingActionItemStatusDb
+          task_id?: string | null
           created_at?: string
           updated_at?: string
           deleted_at?: string | null

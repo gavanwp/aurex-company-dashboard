@@ -21,6 +21,7 @@ import {
   Search,
   Settings,
   Users,
+  Video,
   Workflow,
   type LucideIcon,
 } from 'lucide-react'
@@ -81,6 +82,7 @@ const MODULE_NAV: NavItem[] = [
   { label: 'Projects', href: '/projects', icon: FolderKanban },
   { label: 'Tasks', href: '/tasks', icon: ListChecks },
   { label: 'Calendar', href: '/calendar', icon: Calendar },
+  { label: 'Meetings', href: '/meetings', icon: Video },
   { label: 'Email center', href: '/email', icon: Mail },
   { label: 'Finance', href: '/finance', icon: CircleDollarSign },
   { label: 'Invoices', href: '/finance/invoices', icon: Receipt },

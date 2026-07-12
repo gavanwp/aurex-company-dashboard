@@ -25,7 +25,7 @@ describe('DOMAIN_EVENTS catalog', () => {
   it('every event verb is past tense (13_Folder_Structure.md §7)', () => {
     // Regular past tense ends in -ed; the catalog's sanctioned irregular/state
     // forms are listed explicitly so a new present-tense verb fails this test.
-    const irregularPastForms = new Set(['sent', 'paid', 'overdue'])
+    const irregularPastForms = new Set(['sent', 'paid', 'partially_paid', 'overdue'])
     for (const event of DOMAIN_EVENTS) {
       const verb = event.split('.').at(-1)!
       const isPastTense = verb.endsWith('ed') || irregularPastForms.has(verb)
