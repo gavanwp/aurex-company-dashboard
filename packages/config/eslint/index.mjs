@@ -202,7 +202,11 @@ export function createConfig({ rootPath }) {
             message:
               "R-A1: cross-module imports go through the module's public surface (modules/*/index.ts) — never its internals (docs/13 §3).",
             rules: [
-              { target: ["module"], allow: ["index.ts", "index.tsx"] },
+              // index.ts is the client-safe public surface. server.ts is an
+              // optional server-only surface (server-only queries a module's
+              // server consumers need but client importers of index.ts must
+              // never pull in) — the Next.js "./server" entry-point pattern.
+              { target: ["module"], allow: ["index.ts", "index.tsx", "server.ts"] },
               // Packages define their own public surface via package.json
               // "exports"; the app element has no entry-point restriction.
               { target: ["app", "ui", "core", "ai", "db", "config"], allow: "**" },

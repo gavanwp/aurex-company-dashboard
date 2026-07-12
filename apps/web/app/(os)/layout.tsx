@@ -1,5 +1,6 @@
 import { getWorkspaceContext } from '@/lib/workspace-context'
-import { AppShell, getShellNotifications } from '@/modules/shared'
+import { AppShell } from '@/modules/shared'
+import { getShellNotifications } from '@/modules/shared/server'
 
 export default async function OsLayout({ children }: { children: React.ReactNode }) {
   const ctx = await getWorkspaceContext()
