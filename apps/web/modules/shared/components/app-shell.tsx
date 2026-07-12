@@ -84,7 +84,7 @@ const MODULE_NAV: NavItem[] = [
   { label: 'Email center', href: '/email', icon: Mail },
   { label: 'Finance', href: '/finance', icon: CircleDollarSign },
   { label: 'Invoices', href: '/finance/invoices', icon: Receipt },
-  { label: 'Proposals', icon: ScrollText, soonHint: 'Proposals are coming soon' },
+  { label: 'Proposals', href: '/proposals', icon: ScrollText },
   { label: 'Team', icon: Users, soonHint: 'Team is coming soon' },
   { label: 'Documents', icon: FileText, soonHint: 'Documents are coming soon' },
   { label: 'Knowledge base', icon: BookOpen, soonHint: 'Knowledge base is coming soon' },

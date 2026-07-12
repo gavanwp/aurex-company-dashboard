@@ -4,7 +4,16 @@ import { updateSession } from '@/lib/supabase/middleware'
 // Routes reachable without a session. Everything else requires auth.
 // /reset-password is public on purpose: it detects the recovery session
 // in-page and shows a request-a-new-link state instead of bouncing.
-const PUBLIC_PATHS = ['/login', '/signup', '/forgot-password', '/reset-password', '/auth'] as const
+// /p is the client-facing proposal view: unauthenticated by design, gated
+// by an unguessable token via SECURITY DEFINER RPCs (see migration 0013).
+const PUBLIC_PATHS = [
+  '/login',
+  '/signup',
+  '/forgot-password',
+  '/reset-password',
+  '/auth',
+  '/p',
+] as const
 
 // Signed-in users have no business on these — bounce them to the OS.
 const AUTH_ONLY_PATHS = ['/login', '/signup'] as const

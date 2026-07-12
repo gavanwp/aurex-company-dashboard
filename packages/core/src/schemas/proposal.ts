@@ -75,6 +75,14 @@ export const UpdateProposalInput = CreateProposalInput.partial().extend({
 })
 export type UpdateProposalInput = z.infer<typeof UpdateProposalInput>
 
+// Client-facing e-acceptance on the public tokenized page. Validated by the
+// /api/proposals/[token]/accept route handler before it calls the definer RPC.
+export const AcceptProposalInput = z.object({
+  accepterName: z.string().min(1, 'Please enter your name').max(200),
+  accepterEmail: z.string().email('Enter a valid email').max(320),
+})
+export type AcceptProposalInput = z.infer<typeof AcceptProposalInput>
+
 // Governs contract_obligations.due_rule (0009).
 export const ObligationDueRuleSchema = z
   .object({
