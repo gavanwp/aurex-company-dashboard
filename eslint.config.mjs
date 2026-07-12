@@ -21,6 +21,11 @@ export default [
       "**/dist/**",
       // Deno runtime — linted separately with the Deno toolchain, not here.
       "supabase/functions/**",
+      // Colocated web unit tests run under Vitest, not the Next app tsconfig
+      // (they're excluded from apps/web/tsconfig.json), so the type-aware
+      // project service can't see them — lint them via their Vitest run.
+      "apps/web/**/*.test.ts",
+      "apps/web/**/*.test.tsx",
       // Generated declaration files, except Next's marker file (re-included
       // below; the preset disables the one rule it would trip).
       "**/*.d.ts",
