@@ -34,18 +34,19 @@ export const getWorkspaceContext = cache(async (): Promise<WorkspaceContext> => 
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+  // Profile and memberships both depend only on user.id and are independent of
+  // each other, so they run concurrently — this saves one cross-region DB
+  // round-trip on every authenticated page load (getWorkspaceContext gates all
+  // of them). Redirect checks keep their original order (auth before onboarding).
+  const [{ data: profile }, { data: memberships }] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', user.id).single(),
+    supabase
+      .from('workspace_members')
+      .select('workspace_id, role')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: true }),
+  ])
   if (!profile) redirect('/login')
-
-  const { data: memberships } = await supabase
-    .from('workspace_members')
-    .select('workspace_id, role')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: true })
   if (!memberships || memberships.length === 0) redirect('/onboarding')
 
   // Soft-deleted workspaces are already excluded by RLS (workspaces_select
