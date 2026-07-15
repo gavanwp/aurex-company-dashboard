@@ -42,7 +42,16 @@ export const DOMAIN_EVENTS = [
   'proposals.proposal.accepted',
   'proposals.proposal.declined',
   'proposals.proposal.expired',
+  'contracts.contract.created',
+  'contracts.contract.sent',
   'contracts.contract.signed',
+  'contracts.contract.activated',
+  // 'expiry_flagged' (not 'expiring'): the R-Q2 event verb must be past tense —
+  // the renewal radar flags a contract as approaching its end date.
+  'contracts.contract.expiry_flagged',
+  'contracts.contract.terminated',
+  'contracts.obligation.created',
+  'contracts.obligation.converted',
   'meetings.meeting.summarized',
   'meetings.meeting.scheduled',
   'meetings.meeting.completed',

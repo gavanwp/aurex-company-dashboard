@@ -94,11 +94,38 @@ export const ObligationDueRuleSchema = z
   .passthrough()
 export type ObligationDueRule = z.infer<typeof ObligationDueRuleSchema>
 
+// Governs contracts.body (0015): ordered clause/section blocks, the same loose
+// shape idea as proposals.sections. content.body carries the clause text, which
+// may include merge-field placeholders like {{client_name}} resolved at render.
+export const ContractSectionSchema = z
+  .object({
+    id: z.string(),
+    type: z.string().max(40),
+    title: z.string().max(300).optional(),
+    content: z.unknown().optional(),
+    order: z.number().int().nonnegative(),
+  })
+  .passthrough()
+export type ContractSection = z.infer<typeof ContractSectionSchema>
+
+// Governs contracts.signer (0015): the client's typed signing evidence, stamped
+// by sign_contract_by_token. Mirrors the proposals accepted_by convention.
+export const ContractSignerSchema = z
+  .object({
+    name: z.string().min(1).max(200),
+    email: z.string().email().max(320),
+    at: z.string(),
+  })
+  .passthrough()
+export type ContractSigner = z.infer<typeof ContractSignerSchema>
+
 export const ContractSchema = z.object({
   id: z.string().uuid(),
   workspaceId: z.string().uuid(),
   type: z.enum(CONTRACT_TYPES),
   clientId: z.string().uuid().nullable(),
+  projectId: z.string().uuid().nullable(),
+  proposalId: z.string().uuid().nullable(),
   title: z.string().min(1).max(300),
   status: z.enum(CONTRACT_STATUSES),
   effectiveDate: z.string().nullable(),
@@ -106,6 +133,12 @@ export const ContractSchema = z.object({
   autoRenew: z.boolean(),
   valueMinor: z.number().int().nonnegative().nullable(),
   currency: z.string().length(3),
+  body: z.array(ContractSectionSchema),
+  version: z.number().int().min(1),
+  sentAt: z.string().nullable(),
+  signedAt: z.string().nullable(),
+  publicToken: z.string().nullable(),
+  signer: ContractSignerSchema.nullable(),
   signedFileId: z.string().uuid().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -116,12 +149,15 @@ export const CreateContractInput = z.object({
   title: z.string().min(1, 'Contract title is required').max(300),
   type: z.enum(CONTRACT_TYPES),
   clientId: z.string().uuid().nullable().optional(),
+  projectId: z.string().uuid().nullable().optional(),
+  proposalId: z.string().uuid().nullable().optional(),
   status: z.enum(CONTRACT_STATUSES).default('draft'),
   effectiveDate: z.string().date().nullable().optional(),
   endDate: z.string().date().nullable().optional(),
   autoRenew: z.boolean().default(false),
   valueMinor: z.coerce.number().int().nonnegative().nullable().optional(),
   currency: z.string().length(3).default('USD'),
+  body: z.array(ContractSectionSchema).default([]),
 })
 export type CreateContractInput = z.infer<typeof CreateContractInput>
 
@@ -129,6 +165,14 @@ export const UpdateContractInput = CreateContractInput.partial().extend({
   id: z.string().uuid(),
 })
 export type UpdateContractInput = z.infer<typeof UpdateContractInput>
+
+// Client-facing e-signing on the public tokenized page. Validated by the
+// /api/contracts/[token]/sign route handler before it calls the definer RPC.
+export const SignContractInput = z.object({
+  signerName: z.string().min(1, 'Please enter your full name').max(200),
+  signerEmail: z.string().email('Enter a valid email').max(320),
+})
+export type SignContractInput = z.infer<typeof SignContractInput>
 
 export const ContractObligationSchema = z.object({
   id: z.string().uuid(),

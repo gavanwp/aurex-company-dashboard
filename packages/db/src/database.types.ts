@@ -1387,6 +1387,8 @@ export interface Database {
           workspace_id: string
           type: ContractTypeDb
           client_id: string | null
+          project_id: string | null
+          proposal_id: string | null
           title: string
           status: ContractStatusDb
           effective_date: string | null
@@ -1394,6 +1396,12 @@ export interface Database {
           auto_renew: boolean
           value_minor: number | null
           currency: string
+          body: Json
+          version: number
+          sent_at: string | null
+          signed_at: string | null
+          public_token: string | null
+          signer: Json | null
           signed_file_id: string | null
           created_at: string
           updated_at: string
@@ -1404,6 +1412,8 @@ export interface Database {
           workspace_id: string
           type: ContractTypeDb
           client_id?: string | null
+          project_id?: string | null
+          proposal_id?: string | null
           title: string
           status?: ContractStatusDb
           effective_date?: string | null
@@ -1411,6 +1421,12 @@ export interface Database {
           auto_renew?: boolean
           value_minor?: number | null
           currency?: string
+          body?: Json
+          version?: number
+          sent_at?: string | null
+          signed_at?: string | null
+          public_token?: string | null
+          signer?: Json | null
           signed_file_id?: string | null
           created_at?: string
           updated_at?: string
@@ -1421,6 +1437,8 @@ export interface Database {
           workspace_id?: string
           type?: ContractTypeDb
           client_id?: string | null
+          project_id?: string | null
+          proposal_id?: string | null
           title?: string
           status?: ContractStatusDb
           effective_date?: string | null
@@ -1428,6 +1446,12 @@ export interface Database {
           auto_renew?: boolean
           value_minor?: number | null
           currency?: string
+          body?: Json
+          version?: number
+          sent_at?: string | null
+          signed_at?: string | null
+          public_token?: string | null
+          signer?: Json | null
           signed_file_id?: string | null
           created_at?: string
           updated_at?: string

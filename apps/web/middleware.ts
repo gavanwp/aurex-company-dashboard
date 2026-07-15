@@ -13,6 +13,7 @@ const PUBLIC_PATHS = [
   '/reset-password',
   '/auth',
   '/p',
+  '/c',
 ] as const
 
 // Signed-in users have no business on these — bounce them to the OS.
