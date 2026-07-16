@@ -50,6 +50,10 @@ export type MeetingTypeDb = 'internal' | 'client' | 'sales' | 'standup'
 export type MeetingStatusDb = 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
 export type MeetingActionItemStatusDb = 'proposed' | 'accepted' | 'converted' | 'dismissed'
 export type CalendarEventSourceDb = 'native' | 'synced' | 'system'
+export type EmploymentTypeDb = 'full_time' | 'part_time' | 'contractor' | 'intern'
+export type CompPeriodDb = 'hourly' | 'monthly' | 'annual'
+export type LeaveTypeDb = 'vacation' | 'sick' | 'personal' | 'unpaid' | 'other'
+export type LeaveStatusDb = 'pending' | 'approved' | 'rejected' | 'cancelled'
 export type AutomationStatusDb = 'draft' | 'active' | 'paused'
 export type AutomationScopeDb = 'workspace' | 'project' | 'module'
 export type AutomationRunStatusDb = 'running' | 'succeeded' | 'failed' | 'cancelled'
@@ -1453,6 +1457,123 @@ export interface Database {
           public_token?: string | null
           signer?: Json | null
           signed_file_id?: string | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Relationships: []
+      }
+      hr_profiles: {
+        Row: {
+          id: string
+          workspace_id: string
+          user_id: string
+          title: string | null
+          employment_type: EmploymentTypeDb | null
+          manager_id: string | null
+          start_date: string | null
+          location: string | null
+          timezone: string | null
+          phone: string | null
+          bio: string | null
+          skills: Json
+          weekly_capacity_hours: number | null
+          comp_amount_minor: number | null
+          comp_currency: string
+          comp_period: CompPeriodDb | null
+          created_at: string
+          updated_at: string
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          user_id: string
+          title?: string | null
+          employment_type?: EmploymentTypeDb | null
+          manager_id?: string | null
+          start_date?: string | null
+          location?: string | null
+          timezone?: string | null
+          phone?: string | null
+          bio?: string | null
+          skills?: Json
+          weekly_capacity_hours?: number | null
+          comp_amount_minor?: number | null
+          comp_currency?: string
+          comp_period?: CompPeriodDb | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          user_id?: string
+          title?: string | null
+          employment_type?: EmploymentTypeDb | null
+          manager_id?: string | null
+          start_date?: string | null
+          location?: string | null
+          timezone?: string | null
+          phone?: string | null
+          bio?: string | null
+          skills?: Json
+          weekly_capacity_hours?: number | null
+          comp_amount_minor?: number | null
+          comp_currency?: string
+          comp_period?: CompPeriodDb | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Relationships: []
+      }
+      hr_leave_requests: {
+        Row: {
+          id: string
+          workspace_id: string
+          user_id: string
+          type: LeaveTypeDb
+          start_date: string
+          end_date: string
+          status: LeaveStatusDb
+          reason: string | null
+          decided_by: string | null
+          decided_at: string | null
+          decision_note: string | null
+          created_at: string
+          updated_at: string
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          user_id: string
+          type: LeaveTypeDb
+          start_date: string
+          end_date: string
+          status?: LeaveStatusDb
+          reason?: string | null
+          decided_by?: string | null
+          decided_at?: string | null
+          decision_note?: string | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          user_id?: string
+          type?: LeaveTypeDb
+          start_date?: string
+          end_date?: string
+          status?: LeaveStatusDb
+          reason?: string | null
+          decided_by?: string | null
+          decided_at?: string | null
+          decision_note?: string | null
           created_at?: string
           updated_at?: string
           deleted_at?: string | null

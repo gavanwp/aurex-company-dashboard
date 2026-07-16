@@ -22,9 +22,9 @@ An **AI-native, multi-tenant SaaS "operating system" for digital agencies** (bui
   - `packages/db` — typed Supabase clients, hand-maintained `database.types.ts`.
   - `packages/ai` — AI gateway foundation (Phase 3 orchestration deferred).
   - `packages/config` — eslint/tsconfig/tailwind presets.
-  - `supabase/migrations` — 15 SQL migrations (`0001`–`0015`).
+  - `supabase/migrations` — 16 SQL migrations (`0001`–`0016`).
   - `docs/` — planning (`01–15`), `architecture/` (15 docs + ADRs 0001–0006), `design/` (28 docs).
-  - `scripts/` — `apply-migrations.mjs`, `seed-remote.mjs` (node pg utilities).
+  - `scripts/` — `apply-migrations.mjs` (whole set), `apply-migration.mjs` (single file, for incremental migrations on the already-migrated hosted DB), `seed-remote.mjs`, `seed-team.mjs` (node pg utilities).
 
 ## 3. Binding rules (never violate — enforced by lint/CI)
 
@@ -76,12 +76,13 @@ pnpm --filter @aurexos/core exec vitest run           # 51 tests
   - **Proposals** — block builder, tokenized public accept page `/p/[token]`, convert-to-invoice/project/deal.
   - **Meetings** — **pre-meeting brief** (assembles relationship context), live mode, decisions log, action-items → tasks.
   - **Contracts** — **renewal radar**, obligations → tasks, tokenized public signing `/c/[token]`, create-from-proposal.
+  - **Team & HR** — directory (skill/capacity cards, search + specialization filter), member profiles (skills with proficiency meters, manager/reports, **field-level compensation** for Owner/HR/Finance), leave management (request → approve/reject/cancel lifecycle), people-overview tiles. Tables `hr_profiles` + `hr_leave_requests` (0016); events `hr.profile.*` / `hr.leave.*`.
   - **Settings** (workspace, members, security).
 - **Platform:** `packages/ai` gateway (Claude/OpenAI/Gemini adapters, router, prompts, metering); notification-engine contracts; storage abstraction; jobs enqueue seam; Edge Function skeletons.
 
 ## 7. Not built yet (sidebar shows "Soon")
 
-Team & HR · Documents · Knowledge Base · Automation Studio · Analytics · AI Assistant (Aurex chat — **Phase 3 flagship**: gateway exists, LangGraph orchestration + RAG + tools + approvals deferred) · Client Portal (Phase 4).
+Documents · Knowledge Base · Automation Studio · Analytics · AI Assistant (Aurex chat — **Phase 3 flagship**: gateway exists, LangGraph orchestration + RAG + tools + approvals deferred) · Client Portal (Phase 4). _Team & HR Phase-3 AI (capacity intelligence, skills-aware staffing, review drafting) and onboarding/offboarding checklists + review cycles are deferred; the Phase-2 core shipped._
 
 ## 8. Performance state
 

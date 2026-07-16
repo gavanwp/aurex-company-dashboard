@@ -89,7 +89,7 @@ const MODULE_NAV: NavItem[] = [
   { label: 'Invoices', href: '/finance/invoices', icon: Receipt },
   { label: 'Proposals', href: '/proposals', icon: ScrollText },
   { label: 'Contracts', href: '/contracts', icon: FileSignature },
-  { label: 'Team', icon: Users, soonHint: 'Team is coming soon' },
+  { label: 'Team', href: '/team', icon: Users },
   { label: 'Documents', icon: FileText, soonHint: 'Documents are coming soon' },
   { label: 'Knowledge base', icon: BookOpen, soonHint: 'Knowledge base is coming soon' },
   { label: 'Automation', icon: Workflow, soonHint: 'Automation is coming soon' },

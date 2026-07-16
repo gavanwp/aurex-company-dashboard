@@ -44,14 +44,7 @@ export type TaskPriority = (typeof TASK_PRIORITIES)[number]
 export const CLIENT_STATUSES = ['prospect', 'active', 'paused', 'churned'] as const
 export type ClientStatus = (typeof CLIENT_STATUSES)[number]
 
-export const DEAL_STAGES = [
-  'lead',
-  'qualified',
-  'proposal',
-  'negotiation',
-  'won',
-  'lost',
-] as const
+export const DEAL_STAGES = ['lead', 'qualified', 'proposal', 'negotiation', 'won', 'lost'] as const
 export type DealStage = (typeof DEAL_STAGES)[number]
 
 // ── Documents & Knowledge Base (0006) ──────────────────────────────────────
@@ -170,6 +163,22 @@ export type MeetingStatus = (typeof MEETING_STATUSES)[number]
 
 export const CALENDAR_EVENT_SOURCES = ['native', 'synced', 'system'] as const
 export type CalendarEventSource = (typeof CALENDAR_EVENT_SOURCES)[number]
+
+// ── Team & HR (0016) ─────────────────────────────────────────────────────────
+export const EMPLOYMENT_TYPES = ['full_time', 'part_time', 'contractor', 'intern'] as const
+export type EmploymentType = (typeof EMPLOYMENT_TYPES)[number]
+
+export const SKILL_LEVELS = ['beginner', 'intermediate', 'advanced', 'expert'] as const
+export type SkillLevel = (typeof SKILL_LEVELS)[number]
+
+export const COMP_PERIODS = ['hourly', 'monthly', 'annual'] as const
+export type CompPeriod = (typeof COMP_PERIODS)[number]
+
+export const LEAVE_TYPES = ['vacation', 'sick', 'personal', 'unpaid', 'other'] as const
+export type LeaveType = (typeof LEAVE_TYPES)[number]
+
+export const LEAVE_STATUSES = ['pending', 'approved', 'rejected', 'cancelled'] as const
+export type LeaveStatus = (typeof LEAVE_STATUSES)[number]
 
 // ── Automations & Jobs (0011) ───────────────────────────────────────────────
 export const AUTOMATION_STATUSES = ['draft', 'active', 'paused'] as const
