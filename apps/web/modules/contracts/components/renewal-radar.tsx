@@ -121,7 +121,7 @@ export function RenewalRadarPanel({ radar }: RenewalRadarPanelProps) {
       </div>
 
       {/* Headline tiles */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="aurex-reveal grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">

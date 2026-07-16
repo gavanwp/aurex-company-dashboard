@@ -2,6 +2,7 @@ import * as React from 'react'
 import type { LucideIcon } from 'lucide-react'
 
 import { cn } from '../lib/utils'
+import { AnimatedNumber } from './animated-number'
 import { Card } from './card'
 
 export interface StatCardProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -86,7 +87,9 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
         ) : null}
       </div>
       <div className="mt-2 text-2xl font-bold tracking-tight text-foreground [font-variant-numeric:tabular-nums]">
-        {value}
+        {/* Numeric values count up once on mount (ADR-0007); rich/string
+            values (formatted money, "37h") render as-is. */}
+        {typeof value === 'number' ? <AnimatedNumber value={value} /> : value}
       </div>
       {deltaSlot ? (
         <div className="mt-1">{deltaSlot}</div>

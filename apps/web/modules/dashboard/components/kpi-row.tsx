@@ -42,7 +42,7 @@ function KpiSparkline({ data, hue, label }: { data: number[]; hue: string; label
  */
 export function KpiRow({ data }: { data: DashboardData }) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 min-[1920px]:grid-cols-5">
+    <div className="aurex-reveal grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 min-[1920px]:grid-cols-5">
       <StatCard
         label="Total revenue"
         value={formatMoney(data.revenue.totalMinor)}

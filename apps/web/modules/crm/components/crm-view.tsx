@@ -61,7 +61,7 @@ export function CrmView({ tab, deals, contacts, clients, summary }: CrmViewProps
         </TabsList>
 
         <TabsContent value="pipeline" className="mt-4 space-y-4">
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="aurex-reveal grid gap-3 sm:grid-cols-3">
             <StatCard
               label="Open pipeline"
               value={formatMoney(summary.openValueCents)}

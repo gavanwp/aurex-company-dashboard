@@ -1,13 +1,15 @@
 # Animation System
 
-| | |
-|---|---|
-| **Document** | Animation System — AurexOS Design System |
-| **Status** | Approved — Living Document |
-| **Version** | 1.0 |
-| **Date** | 2026-07-08 |
-| **Owner** | Chief Product Designer, AurexDesigns |
-| **Related** | [../11_Design_Principles.md](../11_Design_Principles.md) · [DesignTokens.md](./DesignTokens.md) · [Components.md](./Components.md) · [Accessibility.md](./Accessibility.md) · [Elevation.md](./Elevation.md) |
+|              |                                                                                                                                                                                                              |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Document** | Animation System — AurexOS Design System                                                                                                                                                                     |
+| **Status**   | Approved — Living Document                                                                                                                                                                                   |
+| **Version**  | 1.0                                                                                                                                                                                                          |
+| **Date**     | 2026-07-08                                                                                                                                                                                                   |
+| **Owner**    | Chief Product Designer, AurexDesigns                                                                                                                                                                         |
+| **Related**  | [../11_Design_Principles.md](../11_Design_Principles.md) · [DesignTokens.md](./DesignTokens.md) · [Components.md](./Components.md) · [Accessibility.md](./Accessibility.md) · [Elevation.md](./Elevation.md) |
+
+> **Amended by [ADR-0007](../adr/0007_Motion_Forward_Dashboard.md) (2026-07-15):** the product adopted a **motion-forward** profile — page-entrance motion, staggered grid reveal, card hover-lift, stat count-ups, shimmer skeletons — implemented CSS-first (`aurex-*` utilities in `globals.css`). Where this document's §3 (no load animation), §4 (no hover lift), §5 (instant routes), and §13-Q1 (no count-up) conflict with that profile, **ADR-0007 governs**. The reduced-motion contract (§10), transform/opacity-only performance law (§11), and one-accent/AA visual rules are unchanged and still binding.
 
 This document owns **motion choreography**: the shared variant library, per-pattern rules, and performance law. Motion token values are registered in [DesignTokens.md §9](./DesignTokens.md); the reduced-motion global rule ships in `packages/ui/styles/globals.css`. All motion is implemented with **Framer Motion only**, wrapped in shared variants in `packages/ui/motion` — ad-hoc keyframes or per-feature transition values are a lint failure ([11 §7](../11_Design_Principles.md)).
 
@@ -17,11 +19,11 @@ This document owns **motion choreography**: the shared variant library, per-patt
 
 **Motion is information.** Every animation in AurexOS answers exactly one of three questions:
 
-| Question | Motion's job | Example |
-|---|---|---|
-| **Origin** — where did this come from? | Surface enters from its trigger or edge | Popover scales from its trigger corner; drawer slides from the right edge |
+| Question                                      | Motion's job                                | Example                                                                      |
+| --------------------------------------------- | ------------------------------------------- | ---------------------------------------------------------------------------- |
+| **Origin** — where did this come from?        | Surface enters from its trigger or edge     | Popover scales from its trigger corner; drawer slides from the right edge    |
 | **Relationship** — what is this connected to? | Continuity between states of the same thing | Sidebar label crossfades into icon rail; tab underline slides to the new tab |
-| **Confirmation** — did that work? | A brief, singular acknowledgment | Check morph on save; toast slides in once |
+| **Confirmation** — did that work?             | A brief, singular acknowledgment            | Check morph on save; toast slides in once                                    |
 
 If an animation answers none of these, it does not exist. Decorative motion, looping ambience, attention-seeking bounces, and celebration confetti are banned outright.
 
@@ -39,14 +41,14 @@ Corollaries:
 
 Token values are owned by the [DesignTokens.md §9](./DesignTokens.md) registry — this table is a working reference, not a second source of truth.
 
-| Token | Value | Role |
-|---|---|---|
-| `duration-fast` | 150ms | Micro-interactions: hover transitions, toggles, menus, tabs, toasts, check morphs |
-| `duration-base` | 200ms | Surface transitions: panels, drawers, dialogs, collapse/expand, sidebar width |
-| `duration-slow` | 250ms | Absolute maximum, large surfaces only — requires design sign-off to use |
-| `ease-enter` | `cubic-bezier(0, 0, 0.2, 1)` | Everything entering (ease-out — fast start, gentle landing) |
-| `ease-exit` | `cubic-bezier(0.4, 0, 1, 1)` | Everything exiting (ease-in — exits get out of the way) |
-| `spring-drag` | stiffness ≈ 500, damping ≈ 40, mass 1 | **The one spring.** Drag-and-drop only (§6). No other spring configs exist |
+| Token           | Value                                 | Role                                                                              |
+| --------------- | ------------------------------------- | --------------------------------------------------------------------------------- |
+| `duration-fast` | 150ms                                 | Micro-interactions: hover transitions, toggles, menus, tabs, toasts, check morphs |
+| `duration-base` | 200ms                                 | Surface transitions: panels, drawers, dialogs, collapse/expand, sidebar width     |
+| `duration-slow` | 250ms                                 | Absolute maximum, large surfaces only — requires design sign-off to use           |
+| `ease-enter`    | `cubic-bezier(0, 0, 0.2, 1)`          | Everything entering (ease-out — fast start, gentle landing)                       |
+| `ease-exit`     | `cubic-bezier(0.4, 0, 1, 1)`          | Everything exiting (ease-in — exits get out of the way)                           |
+| `spring-drag`   | stiffness ≈ 500, damping ≈ 40, mass 1 | **The one spring.** Drag-and-drop only (§6). No other spring configs exist        |
 
 Rules:
 
@@ -58,34 +60,34 @@ Rules:
 
 `packages/ui/motion` exports the canonical variants below. Features compose these; they never define their own. A new variant is a design-system change reviewed like an API change.
 
-| Variant | Duration | Choreography | Used by |
-|---|---|---|---|
-| `fade` | 150ms | Opacity 0 → 1 | Tooltips, ghost text appearance, crossfades |
-| `fadeScale` | 150ms | Opacity 0 → 1 + scale 0.98 → 1, **transform-origin set from the trigger side** | Menus, popovers, dropdowns, date pickers, hover cards |
-| `slidePanel` | 200ms | X-translate from the owning edge (right panel: +24px → 0) + fade | Right context panel, drawers, mobile sheets (y-translate) |
-| `dialog` | 200ms | Opacity 0 → 1 + scale 0.97 → 1 from center; scrim fades in parallel | Dialogs, confirmation modals |
-| `palette` | 150ms | Opacity + scale 0.98 → 1 from top-center. **No bounce, no slide-down theatrics** — the palette is a speed tool | Cmd+K command palette |
-| `collapse` | 200ms | Height animates between 0 and measured auto height + content fade | Accordions, expandable rows, disclosure sections, filter panels |
-| `listItem` | 150ms per item | Enter: fade + 4px y-translate; exit: fade. Stagger ≤ **30ms** between items, capped at the first 5 items | Rows/cards added or removed **by user action only** |
-| `checkMorph` | 150ms | Icon path draws/morphs to checkmark, once | Save confirmations, task completion, approval confirmations |
+| Variant      | Duration       | Choreography                                                                                                   | Used by                                                         |
+| ------------ | -------------- | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| `fade`       | 150ms          | Opacity 0 → 1                                                                                                  | Tooltips, ghost text appearance, crossfades                     |
+| `fadeScale`  | 150ms          | Opacity 0 → 1 + scale 0.98 → 1, **transform-origin set from the trigger side**                                 | Menus, popovers, dropdowns, date pickers, hover cards           |
+| `slidePanel` | 200ms          | X-translate from the owning edge (right panel: +24px → 0) + fade                                               | Right context panel, drawers, mobile sheets (y-translate)       |
+| `dialog`     | 200ms          | Opacity 0 → 1 + scale 0.97 → 1 from center; scrim fades in parallel                                            | Dialogs, confirmation modals                                    |
+| `palette`    | 150ms          | Opacity + scale 0.98 → 1 from top-center. **No bounce, no slide-down theatrics** — the palette is a speed tool | Cmd+K command palette                                           |
+| `collapse`   | 200ms          | Height animates between 0 and measured auto height + content fade                                              | Accordions, expandable rows, disclosure sections, filter panels |
+| `listItem`   | 150ms per item | Enter: fade + 4px y-translate; exit: fade. Stagger ≤ **30ms** between items, capped at the first 5 items       | Rows/cards added or removed **by user action only**             |
+| `checkMorph` | 150ms          | Icon path draws/morphs to checkmark, once                                                                      | Save confirmations, task completion, approval confirmations     |
 
 Variant law:
 
 - **`fadeScale` origin is never center for triggered surfaces.** A menu opened from a button grows from that button's corner — that's the origin information (§1). Radix's positioning data supplies the origin; the variant consumes it.
-- **`listItem` stagger never runs on initial page load.** Initial data renders instantly (skeletons already did the waiting — animating arrival after a skeleton is animating twice). Stagger exists only to show cause and effect when the *user* adds, removes, or reorders items. A page that "builds itself" row by row is a demo gimmick, not a work tool.
+- **`listItem` stagger never runs on initial page load.** Initial data renders instantly (skeletons already did the waiting — animating arrival after a skeleton is animating twice). Stagger exists only to show cause and effect when the _user_ adds, removes, or reorders items. A page that "builds itself" row by row is a demo gimmick, not a work tool.
 - **`collapse` measures, then animates.** Height is read from the DOM and animated to the pixel value — no `max-height: 9999px` hacks, no easing distortion.
 - Exit variants always render — surfaces never pop out of existence while their scrim fades. Use Framer's presence handling via the shared wrappers.
 
 ## 4. Interaction motion
 
-| Interaction | Rule |
-|---|---|
-| **Hover** | 150ms transition on **color, background-color, and border-color only**. No scale, no lift, no shadow growth on hover — the sole exception is the kanban drag lift (§6), which is a grab, not a hover |
-| **Press / active** | Instant state change — zero transition. No scale-down "squish" gimmick. Pressing must read as *the tool responded*, not *the tool performed* |
-| **Focus** | The focus ring appears **instantly** — never faded in, never animated. Focus is a functional state, not a moment ([Accessibility.md §4](./Accessibility.md)) |
-| **Toggle / switch** | 150ms thumb travel with `ease-enter`; track color transitions in parallel. No overshoot |
-| **Checkbox / radio** | Instant fill; `checkMorph` draws the check within 150ms |
-| **Selection (rows, cards)** | Background color transition 150ms; no movement |
+| Interaction                 | Rule                                                                                                                                                                                                 |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Hover**                   | 150ms transition on **color, background-color, and border-color only**. No scale, no lift, no shadow growth on hover — the sole exception is the kanban drag lift (§6), which is a grab, not a hover |
+| **Press / active**          | Instant state change — zero transition. No scale-down "squish" gimmick. Pressing must read as _the tool responded_, not _the tool performed_                                                         |
+| **Focus**                   | The focus ring appears **instantly** — never faded in, never animated. Focus is a functional state, not a moment ([Accessibility.md §4](./Accessibility.md))                                         |
+| **Toggle / switch**         | 150ms thumb travel with `ease-enter`; track color transitions in parallel. No overshoot                                                                                                              |
+| **Checkbox / radio**        | Instant fill; `checkMorph` draws the check within 150ms                                                                                                                                              |
+| **Selection (rows, cards)** | Background color transition 150ms; no movement                                                                                                                                                       |
 
 ## 5. Navigation & page transitions
 
@@ -108,10 +110,10 @@ The one place motion gets physical — because the user's hand is literally in i
 
 ## 7. AI motion
 
-Aurex is the calm layer ([11 §9](../11_Design_Principles.md)). Its motion must read as *competent colleague working*, never as *product performing intelligence*.
+Aurex is the calm layer ([11 §9](../11_Design_Principles.md)). Its motion must read as _competent colleague working_, never as _product performing intelligence_.
 
 - **Streaming text:** tokens render at their natural arrival rate — no artificial typewriter throttle, no per-character animation. Layout is reserved before streaming begins so content never jumps or pushes the viewport. A caret indicates the stream is live: a subtle opacity pulse at ≤ 1Hz, nothing faster.
-- **Thinking / tool-use indicator:** disclosed steps ("Searching invoices… found 3") appear as calm list rows using `listItem` — no spinner theatrics, no shimmering "thinking" orbs, no pulsing gradients. The information *is* the animation.
+- **Thinking / tool-use indicator:** disclosed steps ("Searching invoices… found 3") appear as calm list rows using `listItem` — no spinner theatrics, no shimmering "thinking" orbs, no pulsing gradients. The information _is_ the animation.
 - **Approval cards:** enter with `fadeScale`, exactly like any other surface. **No attention bounce, no glow, no pulse** — an AI proposal earns attention through placement and content, not motion. Motion begging for approval undermines trust in the approval.
 - **Ghost text:** appears with `fade` (150ms), disappears instantly on dismissal. It never types itself out.
 - **The ✦ Aurex mark never animates.** Not on arrival, not on hover, not while streaming. It is an attribution stamp, not a mascot.
@@ -135,11 +137,11 @@ Aurex is the calm layer ([11 §9](../11_Design_Principles.md)). Its motion must 
 
 The contract:
 
-| Under reduced motion | Behavior |
-|---|---|
-| **Remains** | Opacity fades at ≤ 100ms — enough to prevent jarring pops, never enough to be *motion* |
-| **Dies** | All transforms (translate, scale, tilt), springs, stagger, collapse height animation (snaps open/closed), skeleton pulse (static block), caret pulse (static caret), tab underline slide (jumps), toast slide (fades in place) |
-| **Never existed** | Parallax, autoplay, scroll-driven animation — banned regardless of preference |
+| Under reduced motion | Behavior                                                                                                                                                                                                                       |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Remains**          | Opacity fades at ≤ 100ms — enough to prevent jarring pops, never enough to be _motion_                                                                                                                                         |
+| **Dies**             | All transforms (translate, scale, tilt), springs, stagger, collapse height animation (snaps open/closed), skeleton pulse (static block), caret pulse (static caret), tab underline slide (jumps), toast slide (fades in place) |
+| **Never existed**    | Parallax, autoplay, scroll-driven animation — banned regardless of preference                                                                                                                                                  |
 
 - Drag-and-drop remains fully functional under reduced motion: lift styling applies instantly, items reposition without the spring. Function is never reduced — only motion.
 - **Testing requirement:** every Playwright suite that exercises an animated surface runs once with `reducedMotion: 'reduce'` emulated; a component that breaks (unmeasured heights, orphaned exit states, invisible content) fails CI. Reduced-motion is a first-class state, not a degraded one.
@@ -155,28 +157,28 @@ The contract:
 
 ## 12. Do / Don't
 
-| # | Do | Don't |
-|---|---|---|
-| 1 | Use the shared variants from `packages/ui/motion` for every animation | Write feature-local keyframes, transition values, or inline Framer configs |
-| 2 | Scale menus/popovers from their trigger origin | Grow every surface from center regardless of what opened it |
-| 3 | Keep route changes instant and let skeletons carry loading | Choreograph page fades or slide transitions between routes |
-| 4 | Transition hover with color/border only, 150ms | Scale, lift, or shadow-grow on hover |
-| 5 | Use the one `spring-drag` config for all drag physics | Tune a "better" spring per board or per feature |
-| 6 | Stagger list items ≤ 30ms, only on user-initiated changes | Stagger-animate initial page loads or data refreshes |
-| 7 | Let streaming text flow at natural token rate with reserved layout | Add typewriter throttles, per-character effects, or layout that grows jumpily |
-| 8 | Enter approval cards with the standard `fadeScale` | Bounce, glow, or pulse AI surfaces to demand attention |
-| 9 | Pulse a badge once, only for approval-request arrival | Loop pulses, animate count-ups, or pulse any other badge |
-| 10 | Show focus rings instantly | Fade or animate focus indication in |
-| 11 | Collapse to ≤ 100ms opacity fades under reduced motion, at the wrapper level | Rely on each feature remembering to check the media query |
-| 12 | Animate transform/opacity; measure heights for `collapse` | Animate layout properties or `max-height` hacks |
-| 13 | Keep every transition interruptible | Lock input, queue clicks, or disable UI "until the animation finishes" |
-| 14 | Delete an animation when unsure it earns its place | Add motion because a surface "feels static" |
+| #   | Do                                                                           | Don't                                                                         |
+| --- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| 1   | Use the shared variants from `packages/ui/motion` for every animation        | Write feature-local keyframes, transition values, or inline Framer configs    |
+| 2   | Scale menus/popovers from their trigger origin                               | Grow every surface from center regardless of what opened it                   |
+| 3   | Keep route changes instant and let skeletons carry loading                   | Choreograph page fades or slide transitions between routes                    |
+| 4   | Transition hover with color/border only, 150ms                               | Scale, lift, or shadow-grow on hover                                          |
+| 5   | Use the one `spring-drag` config for all drag physics                        | Tune a "better" spring per board or per feature                               |
+| 6   | Stagger list items ≤ 30ms, only on user-initiated changes                    | Stagger-animate initial page loads or data refreshes                          |
+| 7   | Let streaming text flow at natural token rate with reserved layout           | Add typewriter throttles, per-character effects, or layout that grows jumpily |
+| 8   | Enter approval cards with the standard `fadeScale`                           | Bounce, glow, or pulse AI surfaces to demand attention                        |
+| 9   | Pulse a badge once, only for approval-request arrival                        | Loop pulses, animate count-ups, or pulse any other badge                      |
+| 10  | Show focus rings instantly                                                   | Fade or animate focus indication in                                           |
+| 11  | Collapse to ≤ 100ms opacity fades under reduced motion, at the wrapper level | Rely on each feature remembering to check the media query                     |
+| 12  | Animate transform/opacity; measure heights for `collapse`                    | Animate layout properties or `max-height` hacks                               |
+| 13  | Keep every transition interruptible                                          | Lock input, queue clicks, or disable UI "until the animation finishes"        |
+| 14  | Delete an animation when unsure it earns its place                           | Add motion because a surface "feels static"                                   |
 
 ## 13. Open questions
 
-| # | Question | Owner | Target |
-|---|---|---|---|
-| 1 | Number ticker for stat tiles (animated count-up on dashboard load): currently banned under §3's no-load-animation rule — is there a case for a one-time 200ms settle on *changed* values during live refresh? | Chief Product Designer | Phase 2 (Dashboard live data) |
-| 2 | View transitions API as a future substrate for the shared variants (progressive enhancement) — evaluate once browser support and Framer interop mature | Founding CTO | Phase 4 re-evaluation |
-| 3 | Calendar drag (event resize/move) — confirm `spring-drag` feels right for time-grid snapping or whether snap-to-slot should suppress the spring settle | Chief Product Designer | Phase 2 (Calendar) |
-| 4 | Whether portal (client-facing) surfaces need a *more* conservative motion profile than the app (clients are infrequent users; motion familiarity is lower) | Chief Product Designer | Phase 3 (Portal) |
+| #   | Question                                                                                                                                                                                                      | Owner                  | Target                        |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ----------------------------- |
+| 1   | Number ticker for stat tiles (animated count-up on dashboard load): currently banned under §3's no-load-animation rule — is there a case for a one-time 200ms settle on _changed_ values during live refresh? | Chief Product Designer | Phase 2 (Dashboard live data) |
+| 2   | View transitions API as a future substrate for the shared variants (progressive enhancement) — evaluate once browser support and Framer interop mature                                                        | Founding CTO           | Phase 4 re-evaluation         |
+| 3   | Calendar drag (event resize/move) — confirm `spring-drag` feels right for time-grid snapping or whether snap-to-slot should suppress the spring settle                                                        | Chief Product Designer | Phase 2 (Calendar)            |
+| 4   | Whether portal (client-facing) surfaces need a _more_ conservative motion profile than the app (clients are infrequent users; motion familiarity is lower)                                                    | Chief Product Designer | Phase 3 (Portal)              |

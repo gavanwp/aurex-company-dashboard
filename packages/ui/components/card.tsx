@@ -16,11 +16,11 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
     <div
       ref={ref}
       className={cn(
-        // Border-first, no default shadow (Elevation.md / DR-8) — flat and
-        // premium; shadows are reserved for genuinely floating layers.
+        // Border-first surface. Interactive cards lift on hover (ADR-0007):
+        // a 2px rise + soft shadow + accent border — reads as "pick me up".
         'rounded-lg border bg-card text-card-foreground',
         interactive &&
-          'cursor-pointer transition-colors duration-150 hover:border-foreground/20 hover:bg-accent/40',
+          'cursor-pointer transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-foreground/20 hover:bg-accent/40 hover:shadow-lg hover:shadow-foreground/5',
         className,
       )}
       {...props}
