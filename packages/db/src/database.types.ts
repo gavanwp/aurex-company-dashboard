@@ -50,6 +50,10 @@ export type MeetingTypeDb = 'internal' | 'client' | 'sales' | 'standup'
 export type MeetingStatusDb = 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
 export type MeetingActionItemStatusDb = 'proposed' | 'accepted' | 'converted' | 'dismissed'
 export type CalendarEventSourceDb = 'native' | 'synced' | 'system'
+export type OrgPlanDb = 'free' | 'pro' | 'business' | 'enterprise'
+export type OrgStatusDb = 'active' | 'suspended' | 'cancelled'
+export type OrgRoleDb = 'owner' | 'admin' | 'member'
+export type OrgMemberStatusDb = 'invited' | 'active' | 'suspended'
 export type EmploymentTypeDb = 'full_time' | 'part_time' | 'contractor' | 'intern'
 export type CompPeriodDb = 'hourly' | 'monthly' | 'annual'
 export type LeaveTypeDb = 'vacation' | 'sick' | 'personal' | 'unpaid' | 'other'
@@ -95,9 +99,88 @@ export interface Database {
         }
         Relationships: []
       }
+      organizations: {
+        Row: {
+          id: string
+          name: string
+          slug: string
+          plan: OrgPlanDb
+          status: OrgStatusDb
+          billing_customer_ref: string | null
+          branding: Json
+          sso_config: Json
+          data_region: string | null
+          cell_id: string | null
+          parent_org_id: string | null
+          owner_principal_id: string | null
+          created_at: string
+          updated_at: string
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          name: string
+          slug: string
+          plan?: OrgPlanDb
+          status?: OrgStatusDb
+          billing_customer_ref?: string | null
+          branding?: Json
+          sso_config?: Json
+          data_region?: string | null
+          cell_id?: string | null
+          parent_org_id?: string | null
+          owner_principal_id?: string | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          name?: string
+          slug?: string
+          plan?: OrgPlanDb
+          status?: OrgStatusDb
+          billing_customer_ref?: string | null
+          branding?: Json
+          sso_config?: Json
+          data_region?: string | null
+          cell_id?: string | null
+          parent_org_id?: string | null
+          owner_principal_id?: string | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Relationships: []
+      }
+      organization_members: {
+        Row: {
+          organization_id: string
+          principal_id: string
+          org_role: OrgRoleDb
+          status: OrgMemberStatusDb
+          created_at: string
+        }
+        Insert: {
+          organization_id: string
+          principal_id: string
+          org_role?: OrgRoleDb
+          status?: OrgMemberStatusDb
+          created_at?: string
+        }
+        Update: {
+          organization_id?: string
+          principal_id?: string
+          org_role?: OrgRoleDb
+          status?: OrgMemberStatusDb
+          created_at?: string
+        }
+        Relationships: []
+      }
       workspaces: {
         Row: {
           id: string
+          organization_id: string
           name: string
           slug: string
           logo_url: string | null
@@ -108,6 +191,7 @@ export interface Database {
         }
         Insert: {
           id?: string
+          organization_id: string
           name: string
           slug: string
           logo_url?: string | null
@@ -118,6 +202,7 @@ export interface Database {
         }
         Update: {
           id?: string
+          organization_id?: string
           name?: string
           slug?: string
           logo_url?: string | null

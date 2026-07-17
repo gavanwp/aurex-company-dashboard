@@ -16,6 +16,16 @@ export const WORKSPACE_ROLES = [
 ] as const
 export type WorkspaceRole = (typeof WORKSPACE_ROLES)[number]
 
+// ── Organization tier (0017) — enterprise account above the workspace ────────
+export const ORG_PLANS = ['free', 'pro', 'business', 'enterprise'] as const
+export type OrgPlan = (typeof ORG_PLANS)[number]
+
+export const ORG_STATUSES = ['active', 'suspended', 'cancelled'] as const
+export type OrgStatus = (typeof ORG_STATUSES)[number]
+
+export const ORGANIZATION_ROLES = ['owner', 'admin', 'member'] as const
+export type OrganizationRole = (typeof ORGANIZATION_ROLES)[number]
+
 export const MEMBER_SPECIALIZATIONS = [
   'developer',
   'designer',

@@ -22,7 +22,7 @@ An **AI-native, multi-tenant SaaS "operating system" for digital agencies** (bui
   - `packages/db` — typed Supabase clients, hand-maintained `database.types.ts`.
   - `packages/ai` — AI gateway foundation (Phase 3 orchestration deferred).
   - `packages/config` — eslint/tsconfig/tailwind presets.
-  - `supabase/migrations` — 16 SQL migrations (`0001`–`0016`).
+  - `supabase/migrations` — 17 SQL migrations (`0001`–`0017`). `0017` adds the **Organization tier** above workspaces (Enterprise RBAC step 1, [ADR-0008](adr/0008_Enterprise_Identity_And_RBAC.md) / [EnterpriseIdentityAndRBAC.md](architecture/EnterpriseIdentityAndRBAC.md)) — no behavior change: every workspace backfilled a 1:1 org, `create_workspace` updated, `workspaces.organization_id` NOT NULL.
   - `docs/` — planning (`01–15`), `architecture/` (15 docs + ADRs 0001–0006), `design/` (28 docs).
   - `scripts/` — `apply-migrations.mjs` (whole set), `apply-migration.mjs` (single file, for incremental migrations on the already-migrated hosted DB), `seed-remote.mjs`, `seed-team.mjs` (node pg utilities).
 
