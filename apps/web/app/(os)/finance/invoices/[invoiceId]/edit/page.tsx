@@ -11,7 +11,7 @@ export default async function EditInvoicePage({
   params: Promise<{ invoiceId: string }>
 }) {
   const [{ invoiceId }, ctx] = await Promise.all([params, getWorkspaceContext()])
-  if (!canManageFinance(ctx.role)) notFound()
+  if (!(await canManageFinance(ctx))) notFound()
 
   const [invoice, options] = await Promise.all([
     getInvoice(ctx, invoiceId),

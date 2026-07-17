@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: 'New automation' }
 
 export default async function NewAutomationPage() {
   const ctx = await getWorkspaceContext()
-  if (!canManageAutomations(ctx.role)) notFound()
+  if (!(await canManageAutomations(ctx))) notFound()
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">

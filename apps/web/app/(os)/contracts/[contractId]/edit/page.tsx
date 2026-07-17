@@ -16,7 +16,7 @@ export default async function EditContractPage({
   params: Promise<{ contractId: string }>
 }) {
   const [{ contractId }, ctx] = await Promise.all([params, getWorkspaceContext()])
-  if (!canManageContracts(ctx.role)) notFound()
+  if (!(await canManageContracts(ctx))) notFound()
 
   const [contract, options] = await Promise.all([
     getContract(ctx, contractId),

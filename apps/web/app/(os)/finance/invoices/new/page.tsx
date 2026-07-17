@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: 'New invoice' }
 
 export default async function NewInvoicePage() {
   const ctx = await getWorkspaceContext()
-  if (!canManageFinance(ctx.role)) notFound()
+  if (!(await canManageFinance(ctx))) notFound()
 
   const [options, suggestedNumber] = await Promise.all([
     getFinanceFormOptions(ctx),

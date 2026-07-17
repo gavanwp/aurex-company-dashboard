@@ -11,7 +11,7 @@ export default async function DecisionLogPage({
   searchParams: Promise<{ q?: string }>
 }) {
   const [{ q }, ctx] = await Promise.all([searchParams, getWorkspaceContext()])
-  if (!canViewMeetings(ctx.role)) notFound()
+  if (!(await canViewMeetings(ctx))) notFound()
 
   const decisions = await getDecisionLog(ctx, q)
   return <DecisionLog decisions={decisions} query={q ?? ''} />

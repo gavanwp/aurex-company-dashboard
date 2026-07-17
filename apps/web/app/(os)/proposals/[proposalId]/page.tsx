@@ -16,10 +16,10 @@ export default async function ProposalDetailPage({
   params: Promise<{ proposalId: string }>
 }) {
   const [{ proposalId }, ctx] = await Promise.all([params, getWorkspaceContext()])
-  if (!canViewProposals(ctx.role)) notFound()
+  if (!(await canViewProposals(ctx))) notFound()
 
   const proposal = await getProposal(ctx, proposalId)
   if (!proposal) notFound()
 
-  return <ProposalDetailView proposal={proposal} canManage={canManageProposals(ctx.role)} />
+  return <ProposalDetailView proposal={proposal} canManage={await canManageProposals(ctx)} />
 }

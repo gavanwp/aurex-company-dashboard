@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: 'New proposal' }
 
 export default async function NewProposalPage() {
   const ctx = await getWorkspaceContext()
-  if (!canManageProposals(ctx.role)) notFound()
+  if (!(await canManageProposals(ctx))) notFound()
 
   const options = await getProposalFormOptions(ctx)
 

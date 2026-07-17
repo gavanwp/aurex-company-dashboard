@@ -2,20 +2,14 @@ import 'server-only'
 
 import { revalidatePath } from 'next/cache'
 import { ActionError } from '@/lib/action-error'
-import { requirePermission } from '@/lib/permissions'
+import { hasPermission, requirePermission } from '@/lib/permissions'
 import { getWorkspaceContext, type WorkspaceContext } from '@/lib/workspace-context'
 
-// Capability note: the can() map only carries Phase-1 capabilities, so finance
-// guards are expressed directly by role here — exactly as the email module
-// documented for its own guard. When the capability-map expansion lands, these
-// become `finance.manage` / `finance.view` in can(); until then the roles below
-// are the contract and RLS (0008) is the real backstop.
-//
-// Finance is sensitive (05_User_Roles.md §5): Owner/Finance get full control,
-// Admin can view, everyone else is excluded from money.
-
-const MANAGE_ROLES = new Set(['owner', 'admin', 'finance'])
-const READ_EXCLUDED_ROLES = new Set(['client', 'guest'])
+// Finance access resolves through the RBAC engine (0019 cutover, ADR-0008):
+// finance.invoice.edit to manage, finance.invoice.view to read. The seeded
+// matrix + org-owner elevation preserve pre-cutover access (Owner/Admin/Finance
+// manage; internal view; portal roles excluded). Finance is sensitive
+// (05_User_Roles.md §5) — money stays gated.
 
 /** Mutations (create/edit invoices, record payments, approve expenses). */
 export async function requireFinanceManage(): Promise<WorkspaceContext> {
@@ -31,14 +25,14 @@ export async function requireFinanceRead(): Promise<WorkspaceContext> {
   return ctx
 }
 
-/** Whether a role may run finance mutations (drives UI affordances). */
-export function canManageFinance(role: string): boolean {
-  return MANAGE_ROLES.has(role)
+/** Whether the viewer may run finance mutations (drives UI affordances). */
+export function canManageFinance(ctx: WorkspaceContext): Promise<boolean> {
+  return hasPermission(ctx, 'finance.invoice.edit')
 }
 
-/** Whether a role may view finance at all (portal roles may not). */
-export function canViewFinance(role: string): boolean {
-  return !READ_EXCLUDED_ROLES.has(role)
+/** Whether the viewer may view finance at all (portal roles may not). */
+export function canViewFinance(ctx: WorkspaceContext): Promise<boolean> {
+  return hasPermission(ctx, 'finance.invoice.view')
 }
 
 export function failure(err: unknown): { ok: false; error: string } {

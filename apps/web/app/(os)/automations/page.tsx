@@ -25,7 +25,7 @@ export default async function AutomationsPage({
   searchParams: Promise<{ status?: string; search?: string }>
 }) {
   const [{ status, search }, ctx] = await Promise.all([searchParams, getWorkspaceContext()])
-  if (!canViewAutomations(ctx.role)) notFound()
+  if (!(await canViewAutomations(ctx))) notFound()
 
   const statusTab = isAutomationStatusTab(status) ? status : 'all'
   const filters: GetAutomationsFilters = {}
@@ -37,7 +37,7 @@ export default async function AutomationsPage({
     getAutomationOverview(ctx),
   ])
 
-  const canManage = canManageAutomations(ctx.role)
+  const canManage = await canManageAutomations(ctx)
   const nowMs = Date.now()
 
   return (

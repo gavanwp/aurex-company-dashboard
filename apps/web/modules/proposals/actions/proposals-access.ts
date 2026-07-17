@@ -2,23 +2,13 @@ import 'server-only'
 
 import { revalidatePath } from 'next/cache'
 import { ActionError } from '@/lib/action-error'
-import { requirePermission } from '@/lib/permissions'
+import { hasPermission, requirePermission } from '@/lib/permissions'
 import { getWorkspaceContext, type WorkspaceContext } from '@/lib/workspace-context'
 
-// Capability note: the can() map only carries Phase-1 capabilities, so proposal
-// guards are expressed directly by role here — exactly as finance and email
-// documented for their own guards. When the capability-map expansion lands these
-// become `proposals.manage` / `proposals.view` in can(); until then the roles
-// below are the contract and RLS (0009) is the real backstop.
-//
-// Proposals are a sales artifact (05_User_Roles.md — Sales get Full on
-// Proposals): Owner / Admin / Sales create and drive the lifecycle; every other
-// internal role may view; portal roles (client, guest) are excluded from the
-// internal surface entirely (the client's window on a proposal is the public
-// tokenized page, not this module).
-
-const MANAGE_ROLES = new Set(['owner', 'admin', 'sales'])
-const READ_EXCLUDED_ROLES = new Set(['client', 'guest'])
+// Proposal access resolves through the RBAC engine (0019 cutover, ADR-0008):
+// proposals.proposal.edit to manage, proposals.proposal.view to read. The seeded
+// matrix + org-owner elevation preserve pre-cutover access (Owner/Admin/Sales
+// manage; all internal view; portal roles excluded).
 
 /** Mutations (create/edit/send/expire proposals, convert to scaffold). */
 export async function requireProposalManage(): Promise<WorkspaceContext> {
@@ -34,14 +24,14 @@ export async function requireProposalRead(): Promise<WorkspaceContext> {
   return ctx
 }
 
-/** Whether a role may run proposal mutations (drives UI affordances). */
-export function canManageProposals(role: string): boolean {
-  return MANAGE_ROLES.has(role)
+/** Whether the viewer may run proposal mutations (drives UI affordances). */
+export function canManageProposals(ctx: WorkspaceContext): Promise<boolean> {
+  return hasPermission(ctx, 'proposals.proposal.edit')
 }
 
-/** Whether a role may view proposals at all (portal roles may not). */
-export function canViewProposals(role: string): boolean {
-  return !READ_EXCLUDED_ROLES.has(role)
+/** Whether the viewer may view proposals at all (portal roles may not). */
+export function canViewProposals(ctx: WorkspaceContext): Promise<boolean> {
+  return hasPermission(ctx, 'proposals.proposal.view')
 }
 
 export function failure(err: unknown): { ok: false; error: string } {

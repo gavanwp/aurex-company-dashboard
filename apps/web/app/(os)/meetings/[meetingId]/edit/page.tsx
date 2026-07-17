@@ -16,7 +16,7 @@ export default async function EditMeetingPage({
   params: Promise<{ meetingId: string }>
 }) {
   const [{ meetingId }, ctx] = await Promise.all([params, getWorkspaceContext()])
-  if (!canManageMeetings(ctx.role)) notFound()
+  if (!(await canManageMeetings(ctx))) notFound()
 
   const [meeting, options] = await Promise.all([
     getMeeting(ctx, meetingId),

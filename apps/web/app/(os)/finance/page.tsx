@@ -12,8 +12,8 @@ export const metadata: Metadata = { title: 'Finance' }
 
 export default async function FinancePage() {
   const ctx = await getWorkspaceContext()
-  if (!canViewFinance(ctx.role)) notFound()
+  if (!(await canViewFinance(ctx))) notFound()
 
   const snapshot = await getFinanceOverview(ctx)
-  return <FinanceOverview snapshot={snapshot} canManage={canManageFinance(ctx.role)} />
+  return <FinanceOverview snapshot={snapshot} canManage={await canManageFinance(ctx)} />
 }

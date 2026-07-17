@@ -17,7 +17,7 @@ export default async function AutomationPage({
   params: Promise<{ automationId: string }>
 }) {
   const [{ automationId }, ctx] = await Promise.all([params, getWorkspaceContext()])
-  if (!canViewAutomations(ctx.role)) notFound()
+  if (!(await canViewAutomations(ctx))) notFound()
 
   const automation = await getAutomation(ctx, automationId)
   if (!automation) notFound()
@@ -27,7 +27,7 @@ export default async function AutomationPage({
     <AutomationDetailView
       automation={automation}
       runs={runs}
-      canManage={canManageAutomations(ctx.role)}
+      canManage={await canManageAutomations(ctx)}
       nowMs={Date.now()}
     />
   )

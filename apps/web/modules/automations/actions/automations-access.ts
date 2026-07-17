@@ -2,17 +2,13 @@ import 'server-only'
 
 import { revalidatePath } from 'next/cache'
 import { ActionError } from '@/lib/action-error'
-import { requirePermission } from '@/lib/permissions'
+import { hasPermission, requirePermission } from '@/lib/permissions'
 import { getWorkspaceContext, type WorkspaceContext } from '@/lib/workspace-context'
 
-// Automations touch the whole workspace and run with their creator's
-// permissions (06_Module_Breakdown.md §17), so authoring is gated to Owner/Admin.
-// Every internal member may view them and use the AI assistant; portal roles
-// (client, guest) are excluded from the internal surface entirely. RLS on
-// automations / automation_runs (0011) is the database backstop.
-
-const MANAGE_ROLES = new Set(['owner', 'admin'])
-const READ_EXCLUDED_ROLES = new Set(['client', 'guest'])
+// Automation access resolves through the RBAC engine (0019 cutover, ADR-0008):
+// automation.workflow.create to manage, automation.workflow.view to read.
+// Automations run with their creator's permissions (06_Module_Breakdown.md §17);
+// RLS on automations / automation_runs (0011) is the database backstop.
 
 export async function requireAutomationManage(): Promise<WorkspaceContext> {
   const ctx = await getWorkspaceContext()
@@ -26,12 +22,12 @@ export async function requireAutomationRead(): Promise<WorkspaceContext> {
   return ctx
 }
 
-export function canManageAutomations(role: string): boolean {
-  return MANAGE_ROLES.has(role)
+export function canManageAutomations(ctx: WorkspaceContext): Promise<boolean> {
+  return hasPermission(ctx, 'automation.workflow.create')
 }
 
-export function canViewAutomations(role: string): boolean {
-  return !READ_EXCLUDED_ROLES.has(role)
+export function canViewAutomations(ctx: WorkspaceContext): Promise<boolean> {
+  return hasPermission(ctx, 'automation.workflow.view')
 }
 
 export function failure(err: unknown): { ok: false; error: string } {

@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: 'New contract' }
 
 export default async function NewContractPage() {
   const ctx = await getWorkspaceContext()
-  if (!canManageContracts(ctx.role)) notFound()
+  if (!(await canManageContracts(ctx))) notFound()
 
   const options = await getContractFormOptions(ctx)
 

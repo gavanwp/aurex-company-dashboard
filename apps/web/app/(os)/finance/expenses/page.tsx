@@ -19,7 +19,7 @@ export default async function ExpensesPage({
   searchParams: Promise<{ status?: string }>
 }) {
   const [{ status }, ctx] = await Promise.all([searchParams, getWorkspaceContext()])
-  if (!canViewFinance(ctx.role)) notFound()
+  if (!(await canViewFinance(ctx))) notFound()
 
   const statusTab = isExpenseStatusTab(status) ? status : 'all'
   const filters: GetExpensesFilters = {}
@@ -35,7 +35,7 @@ export default async function ExpensesPage({
       expenses={expenses}
       statusTab={statusTab}
       projects={options.projects}
-      canManage={canManageFinance(ctx.role)}
+      canManage={await canManageFinance(ctx)}
     />
   )
 }

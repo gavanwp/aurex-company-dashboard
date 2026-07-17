@@ -19,7 +19,7 @@ export default async function ProposalsPage({
   searchParams: Promise<{ status?: string; search?: string }>
 }) {
   const [{ status, search }, ctx] = await Promise.all([searchParams, getWorkspaceContext()])
-  if (!canViewProposals(ctx.role)) notFound()
+  if (!(await canViewProposals(ctx))) notFound()
 
   const statusTab = isProposalStatusTab(status) ? status : 'all'
   const filters: GetProposalsFilters = {}
@@ -33,7 +33,7 @@ export default async function ProposalsPage({
       proposals={proposals}
       statusTab={statusTab}
       search={search ?? ''}
-      canManage={canManageProposals(ctx.role)}
+      canManage={await canManageProposals(ctx)}
     />
   )
 }

@@ -17,7 +17,7 @@ export default async function ContractDetailPage({
   params: Promise<{ contractId: string }>
 }) {
   const [{ contractId }, ctx] = await Promise.all([params, getWorkspaceContext()])
-  if (!canViewContracts(ctx.role)) notFound()
+  if (!(await canViewContracts(ctx))) notFound()
 
   const [contract, members] = await Promise.all([
     getContract(ctx, contractId),
@@ -30,7 +30,7 @@ export default async function ContractDetailPage({
       contract={contract}
       members={members}
       workspaceName={ctx.workspace.name}
-      canManage={canManageContracts(ctx.role)}
+      canManage={await canManageContracts(ctx)}
     />
   )
 }

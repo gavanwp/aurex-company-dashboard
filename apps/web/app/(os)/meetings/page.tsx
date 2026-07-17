@@ -12,12 +12,12 @@ export default async function MeetingsPage({
   searchParams: Promise<{ type?: string }>
 }) {
   const [{ type }, ctx] = await Promise.all([searchParams, getWorkspaceContext()])
-  if (!canViewMeetings(ctx.role)) notFound()
+  if (!(await canViewMeetings(ctx))) notFound()
 
   const typeTab: MeetingTypeTab = isMeetingTypeTab(type) ? type : 'all'
   const meetings = await getMeetings(ctx, { type: typeTab })
 
   return (
-    <MeetingsList meetings={meetings} typeTab={typeTab} canManage={canManageMeetings(ctx.role)} />
+    <MeetingsList meetings={meetings} typeTab={typeTab} canManage={await canManageMeetings(ctx)} />
   )
 }

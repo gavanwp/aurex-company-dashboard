@@ -12,7 +12,7 @@ export default async function EditAutomationPage({
   params: Promise<{ automationId: string }>
 }) {
   const [{ automationId }, ctx] = await Promise.all([params, getWorkspaceContext()])
-  if (!canManageAutomations(ctx.role)) notFound()
+  if (!(await canManageAutomations(ctx))) notFound()
 
   const automation = await getAutomation(ctx, automationId)
   if (!automation) notFound()

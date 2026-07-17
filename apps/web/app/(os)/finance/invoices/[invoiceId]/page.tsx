@@ -11,10 +11,10 @@ export default async function InvoiceDetailPage({
   params: Promise<{ invoiceId: string }>
 }) {
   const [{ invoiceId }, ctx] = await Promise.all([params, getWorkspaceContext()])
-  if (!canViewFinance(ctx.role)) notFound()
+  if (!(await canViewFinance(ctx))) notFound()
 
   const invoice = await getInvoice(ctx, invoiceId)
   if (!invoice) notFound()
 
-  return <InvoiceDetailView invoice={invoice} canManage={canManageFinance(ctx.role)} />
+  return <InvoiceDetailView invoice={invoice} canManage={await canManageFinance(ctx)} />
 }

@@ -18,7 +18,7 @@ export default async function MeetingDetailPage({
   params: Promise<{ meetingId: string }>
 }) {
   const [{ meetingId }, ctx] = await Promise.all([params, getWorkspaceContext()])
-  if (!canViewMeetings(ctx.role)) notFound()
+  if (!(await canViewMeetings(ctx))) notFound()
 
   const meeting = await getMeeting(ctx, meetingId)
   if (!meeting) notFound()
@@ -33,7 +33,7 @@ export default async function MeetingDetailPage({
       meeting={meeting}
       brief={brief}
       members={options.members}
-      canManage={canManageMeetings(ctx.role)}
+      canManage={await canManageMeetings(ctx)}
     />
   )
 }

@@ -2,7 +2,7 @@ import 'server-only'
 
 import { revalidatePath } from 'next/cache'
 import { ActionError } from '@/lib/action-error'
-import { requirePermission } from '@/lib/permissions'
+import { hasPermission, requirePermission } from '@/lib/permissions'
 import { getWorkspaceContext, type WorkspaceContext } from '@/lib/workspace-context'
 
 // Capability note: the can() map only carries Phase-1 capabilities, so meeting
@@ -19,8 +19,6 @@ import { getWorkspaceContext, type WorkspaceContext } from '@/lib/workspace-cont
 // mutations to a subset of roles, because meeting workflow (agenda, notes,
 // decisions, action items) is core team work rather than a sensitive artifact.
 
-const PORTAL_ROLES = new Set(['client', 'guest'])
-
 /** Mutations — every internal member may run meeting workflow; portal roles may not. */
 export async function requireMeetingAccess(): Promise<WorkspaceContext> {
   const ctx = await getWorkspaceContext()
@@ -35,14 +33,14 @@ export async function requireMeetingRead(): Promise<WorkspaceContext> {
   return ctx
 }
 
-/** Whether a role may run meeting mutations (drives UI affordances). */
-export function canManageMeetings(role: string): boolean {
-  return !PORTAL_ROLES.has(role)
+/** Whether the viewer may run meeting mutations (drives UI affordances). */
+export function canManageMeetings(ctx: WorkspaceContext): Promise<boolean> {
+  return hasPermission(ctx, 'meetings.meeting.edit')
 }
 
-/** Whether a role may view meetings at all (portal roles may not). */
-export function canViewMeetings(role: string): boolean {
-  return !PORTAL_ROLES.has(role)
+/** Whether the viewer may view meetings at all (portal roles may not). */
+export function canViewMeetings(ctx: WorkspaceContext): Promise<boolean> {
+  return hasPermission(ctx, 'meetings.meeting.view')
 }
 
 export function failure(err: unknown): { ok: false; error: string } {

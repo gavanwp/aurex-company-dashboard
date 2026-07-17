@@ -24,7 +24,7 @@ export default async function ContractsPage({
   searchParams: Promise<{ status?: string; type?: string; search?: string }>
 }) {
   const [{ status, type, search }, ctx] = await Promise.all([searchParams, getWorkspaceContext()])
-  if (!canViewContracts(ctx.role)) notFound()
+  if (!(await canViewContracts(ctx))) notFound()
 
   const statusTab = isContractStatusTab(status) ? status : 'all'
   const typeFilter = type && CONTRACT_TYPES.includes(type) ? type : 'all'
@@ -48,7 +48,7 @@ export default async function ContractsPage({
         statusTab={statusTab}
         typeFilter={typeFilter}
         search={search ?? ''}
-        canManage={canManageContracts(ctx.role)}
+        canManage={await canManageContracts(ctx)}
       />
     </div>
   )
