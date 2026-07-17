@@ -1,7 +1,8 @@
 import 'server-only'
 
 import { revalidatePath } from 'next/cache'
-import { ActionError } from '@/lib/action-kit'
+import { ActionError } from '@/lib/action-error'
+import { requirePermission } from '@/lib/permissions'
 import { getWorkspaceContext, type WorkspaceContext } from '@/lib/workspace-context'
 
 // Capability note: the can() map only carries Phase-1 capabilities, so proposal
@@ -22,18 +23,14 @@ const READ_EXCLUDED_ROLES = new Set(['client', 'guest'])
 /** Mutations (create/edit/send/expire proposals, convert to scaffold). */
 export async function requireProposalManage(): Promise<WorkspaceContext> {
   const ctx = await getWorkspaceContext()
-  if (!MANAGE_ROLES.has(ctx.role)) {
-    throw new ActionError('forbidden')
-  }
+  await requirePermission(ctx, 'proposals.proposal.edit')
   return ctx
 }
 
 /** Reads — every internal member may view proposals; portal roles may not. */
 export async function requireProposalRead(): Promise<WorkspaceContext> {
   const ctx = await getWorkspaceContext()
-  if (READ_EXCLUDED_ROLES.has(ctx.role)) {
-    throw new ActionError('forbidden')
-  }
+  await requirePermission(ctx, 'proposals.proposal.view')
   return ctx
 }
 

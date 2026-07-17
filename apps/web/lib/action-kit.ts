@@ -1,33 +1,54 @@
 import 'server-only'
 
-import { can, type Capability, type DomainEventType } from '@aurexos/core'
+import type { Capability, DomainEventType } from '@aurexos/core'
 import type { TablesInsert } from '@aurexos/db'
 import { dispatchAutomationsForEvent } from '@/lib/automation-engine'
+import { requirePermission } from '@/lib/permissions'
 import { getWorkspaceContext, type WorkspaceContext } from '@/lib/workspace-context'
 
+// Re-exported so the many `import { ActionError } from '@/lib/action-kit'` sites
+// keep working; the definitions live in action-error.ts to break the cycle with
+// the permission resolver.
+export { ActionError } from '@/lib/action-error'
+export type { ActionResult } from '@/lib/action-error'
+
 /**
- * Thrown by action-kit guards; feature actions catch it (or let a shared
- * wrapper catch it) and surface `error.message` as an ActionResult.
+ * Legacy Phase-1 capability → engine permission key (0019 cutover, ADR-0008).
+ * requireCapability now resolves through the data-driven engine; call sites keep
+ * their capability strings while the underlying check is engine-backed. Old
+ * capability semantics are preserved via the seeded matrix + org-owner elevation.
  */
-export class ActionError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = 'ActionError'
-  }
+const CAPABILITY_TO_PERMISSION: Record<Capability, string> = {
+  'workspace.manage': 'settings.workspace.manage',
+  'workspace.members.manage': 'users.role.assign',
+  'projects.view': 'projects.project.view',
+  'projects.create': 'projects.project.create',
+  'projects.edit': 'projects.project.edit',
+  'projects.delete': 'projects.project.delete',
+  'tasks.view': 'tasks.task.view',
+  'tasks.create': 'tasks.task.create',
+  'tasks.edit': 'tasks.task.edit',
+  'tasks.delete': 'tasks.task.delete',
+  'crm.view': 'crm.crm.view',
+  'crm.create': 'crm.crm.edit',
+  'crm.edit': 'crm.crm.edit',
+  'crm.delete': 'crm.crm.delete',
+  'clients.view': 'clients.client.view',
+  'clients.create': 'clients.client.edit',
+  'clients.edit': 'clients.client.edit',
+  'clients.delete': 'clients.client.delete',
+  'dashboard.view': 'dashboard.dashboard.view',
+  'settings.view': 'settings.workspace.manage',
 }
 
-/** The uniform return shape of every server action. */
-export type ActionResult<T = void> = { ok: true; data: T } | { ok: false; error: string }
-
 /**
- * Resolve workspace context and assert the caller's role grants `capability`.
- * The spine of every mutation: validate → requireCapability → mutate → emit.
+ * Resolve workspace context and assert the caller holds the permission the
+ * capability maps to. The spine of every mutation: validate → requireCapability
+ * → mutate → emit. Engine-backed as of the 0019 cutover.
  */
 export async function requireCapability(capability: Capability): Promise<WorkspaceContext> {
   const ctx = await getWorkspaceContext()
-  if (!can(ctx.role, capability)) {
-    throw new ActionError('forbidden')
-  }
+  await requirePermission(ctx, CAPABILITY_TO_PERMISSION[capability])
   return ctx
 }
 

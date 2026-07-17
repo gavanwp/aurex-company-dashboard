@@ -1,7 +1,8 @@
 import 'server-only'
 
 import { revalidatePath } from 'next/cache'
-import { ActionError } from '@/lib/action-kit'
+import { ActionError } from '@/lib/action-error'
+import { requirePermission } from '@/lib/permissions'
 import { getWorkspaceContext, type WorkspaceContext } from '@/lib/workspace-context'
 
 // Capability note: the can() map only carries Phase-1 capabilities, so meeting
@@ -23,15 +24,15 @@ const PORTAL_ROLES = new Set(['client', 'guest'])
 /** Mutations — every internal member may run meeting workflow; portal roles may not. */
 export async function requireMeetingAccess(): Promise<WorkspaceContext> {
   const ctx = await getWorkspaceContext()
-  if (PORTAL_ROLES.has(ctx.role)) {
-    throw new ActionError('forbidden')
-  }
+  await requirePermission(ctx, 'meetings.meeting.edit')
   return ctx
 }
 
-/** Reads mirror mutations for meetings — internal-only, portal roles excluded. */
+/** Reads — every internal member may view meetings; portal roles may not. */
 export async function requireMeetingRead(): Promise<WorkspaceContext> {
-  return requireMeetingAccess()
+  const ctx = await getWorkspaceContext()
+  await requirePermission(ctx, 'meetings.meeting.view')
+  return ctx
 }
 
 /** Whether a role may run meeting mutations (drives UI affordances). */

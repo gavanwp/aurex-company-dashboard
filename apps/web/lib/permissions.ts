@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { cache } from 'react'
-import { ActionError } from '@/lib/action-kit'
+import { ActionError } from '@/lib/action-error'
 import type { WorkspaceContext } from '@/lib/workspace-context'
 
 // The in-process RBAC resolver (ADR-0008 / EnterpriseIdentityAndRBAC.md §1.2-1.3).

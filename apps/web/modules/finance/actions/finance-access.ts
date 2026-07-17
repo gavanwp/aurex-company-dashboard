@@ -1,7 +1,8 @@
 import 'server-only'
 
 import { revalidatePath } from 'next/cache'
-import { ActionError } from '@/lib/action-kit'
+import { ActionError } from '@/lib/action-error'
+import { requirePermission } from '@/lib/permissions'
 import { getWorkspaceContext, type WorkspaceContext } from '@/lib/workspace-context'
 
 // Capability note: the can() map only carries Phase-1 capabilities, so finance
@@ -19,18 +20,14 @@ const READ_EXCLUDED_ROLES = new Set(['client', 'guest'])
 /** Mutations (create/edit invoices, record payments, approve expenses). */
 export async function requireFinanceManage(): Promise<WorkspaceContext> {
   const ctx = await getWorkspaceContext()
-  if (!MANAGE_ROLES.has(ctx.role)) {
-    throw new ActionError('forbidden')
-  }
+  await requirePermission(ctx, 'finance.invoice.edit')
   return ctx
 }
 
 /** Reads — every internal member may view finance; portal roles may not. */
 export async function requireFinanceRead(): Promise<WorkspaceContext> {
   const ctx = await getWorkspaceContext()
-  if (READ_EXCLUDED_ROLES.has(ctx.role)) {
-    throw new ActionError('forbidden')
-  }
+  await requirePermission(ctx, 'finance.invoice.view')
   return ctx
 }
 

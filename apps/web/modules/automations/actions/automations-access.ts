@@ -1,7 +1,8 @@
 import 'server-only'
 
 import { revalidatePath } from 'next/cache'
-import { ActionError } from '@/lib/action-kit'
+import { ActionError } from '@/lib/action-error'
+import { requirePermission } from '@/lib/permissions'
 import { getWorkspaceContext, type WorkspaceContext } from '@/lib/workspace-context'
 
 // Automations touch the whole workspace and run with their creator's
@@ -15,13 +16,13 @@ const READ_EXCLUDED_ROLES = new Set(['client', 'guest'])
 
 export async function requireAutomationManage(): Promise<WorkspaceContext> {
   const ctx = await getWorkspaceContext()
-  if (!MANAGE_ROLES.has(ctx.role)) throw new ActionError('forbidden')
+  await requirePermission(ctx, 'automation.workflow.create')
   return ctx
 }
 
 export async function requireAutomationRead(): Promise<WorkspaceContext> {
   const ctx = await getWorkspaceContext()
-  if (READ_EXCLUDED_ROLES.has(ctx.role)) throw new ActionError('forbidden')
+  await requirePermission(ctx, 'automation.workflow.view')
   return ctx
 }
 
