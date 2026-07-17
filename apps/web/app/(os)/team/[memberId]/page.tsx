@@ -7,14 +7,12 @@ export const metadata: Metadata = { title: 'Team member' }
 
 export default async function MemberPage({ params }: { params: Promise<{ memberId: string }> }) {
   const [{ memberId }, ctx] = await Promise.all([params, getWorkspaceContext()])
-  if (!canViewTeam(ctx.role)) notFound()
+  if (!(await canViewTeam(ctx))) notFound()
 
   const member = await getMemberDetail(ctx, memberId)
   if (!member) notFound()
 
-  const todayISO = new Date().toISOString().slice(0, 10)
+  const [canManage, todayISO] = [await canManageTeam(ctx), new Date().toISOString().slice(0, 10)]
 
-  return (
-    <MemberDetailView member={member} canManage={canManageTeam(ctx.role)} todayISO={todayISO} />
-  )
+  return <MemberDetailView member={member} canManage={canManage} todayISO={todayISO} />
 }

@@ -50,7 +50,7 @@ export async function upsertMemberProfile(
       .maybeSingle()
     if (!member) return { ok: false, error: 'Not a workspace member' }
 
-    const canComp = canViewCompensation(ctx.role)
+    const canComp = await canViewCompensation(ctx)
     const existing = await existingProfile(ctx, d.userId)
 
     const fields = {

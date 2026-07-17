@@ -18,11 +18,12 @@ export default async function EditMemberPage({
   params: Promise<{ memberId: string }>
 }) {
   const [{ memberId }, ctx] = await Promise.all([params, getWorkspaceContext()])
-  if (!canManageTeam(ctx.role)) notFound()
+  if (!(await canManageTeam(ctx))) notFound()
 
-  const [member, managerOptions] = await Promise.all([
+  const [member, managerOptions, canEditComp] = await Promise.all([
     getMemberDetail(ctx, memberId),
     getMemberOptions(ctx),
+    canViewCompensation(ctx),
   ])
   if (!member) notFound()
 
@@ -35,7 +36,7 @@ export default async function EditMemberPage({
       <MemberProfileForm
         member={member}
         managerOptions={managerOptions}
-        canEditComp={canViewCompensation(ctx.role)}
+        canEditComp={canEditComp}
       />
     </div>
   )

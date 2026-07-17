@@ -22,7 +22,7 @@ export default async function LeavePage({
   searchParams: Promise<{ status?: string }>
 }) {
   const [{ status }, ctx] = await Promise.all([searchParams, getWorkspaceContext()])
-  if (!canViewTeam(ctx.role)) notFound()
+  if (!(await canViewTeam(ctx))) notFound()
 
   const statusTab = isLeaveStatusTab(status) ? status : 'pending'
 
@@ -30,7 +30,7 @@ export default async function LeavePage({
   if (statusTab === 'pending') filters.status = 'pending'
   else if (statusTab === 'approved') filters.status = 'approved'
 
-  const rows = await getLeaveRequests(ctx, filters)
+  const [rows, canManage] = await Promise.all([getLeaveRequests(ctx, filters), canManageTeam(ctx)])
 
   return (
     <div className="space-y-8">
@@ -49,7 +49,7 @@ export default async function LeavePage({
       <LeaveBoard
         rows={rows}
         statusTab={statusTab}
-        canManage={canManageTeam(ctx.role)}
+        canManage={canManage}
         currentUserId={ctx.userId}
       />
     </div>

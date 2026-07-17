@@ -54,6 +54,9 @@ export type OrgPlanDb = 'free' | 'pro' | 'business' | 'enterprise'
 export type OrgStatusDb = 'active' | 'suspended' | 'cancelled'
 export type OrgRoleDb = 'owner' | 'admin' | 'member'
 export type OrgMemberStatusDb = 'invited' | 'active' | 'suspended'
+export type RoleScopeDb = 'platform' | 'organization' | 'workspace' | 'portal'
+export type PermissionEffectDb = 'allow' | 'deny'
+export type OverrideScopeDb = 'organization' | 'workspace' | 'department' | 'team' | 'resource'
 export type EmploymentTypeDb = 'full_time' | 'part_time' | 'contractor' | 'intern'
 export type CompPeriodDb = 'hourly' | 'monthly' | 'annual'
 export type LeaveTypeDb = 'vacation' | 'sick' | 'personal' | 'unpaid' | 'other'
@@ -218,6 +221,7 @@ export interface Database {
           workspace_id: string
           user_id: string
           role: WorkspaceRoleDb
+          role_id: string | null
           specialization: MemberSpecializationDb | null
           created_at: string
         }
@@ -225,6 +229,7 @@ export interface Database {
           workspace_id: string
           user_id: string
           role?: WorkspaceRoleDb
+          role_id?: string | null
           specialization?: MemberSpecializationDb | null
           created_at?: string
         }
@@ -232,8 +237,228 @@ export interface Database {
           workspace_id?: string
           user_id?: string
           role?: WorkspaceRoleDb
+          role_id?: string | null
           specialization?: MemberSpecializationDb | null
           created_at?: string
+        }
+        Relationships: []
+      }
+      permissions: {
+        Row: {
+          key: string
+          module: string
+          resource: string
+          action: string
+          label: string
+          description: string | null
+          is_field_level: boolean
+          is_dangerous: boolean
+          created_at: string
+        }
+        Insert: {
+          key: string
+          module: string
+          resource: string
+          action: string
+          label: string
+          description?: string | null
+          is_field_level?: boolean
+          is_dangerous?: boolean
+          created_at?: string
+        }
+        Update: {
+          key?: string
+          module?: string
+          resource?: string
+          action?: string
+          label?: string
+          description?: string | null
+          is_field_level?: boolean
+          is_dangerous?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
+      roles: {
+        Row: {
+          id: string
+          organization_id: string | null
+          key: string
+          name: string
+          description: string | null
+          scope: RoleScopeDb
+          is_system: boolean
+          parent_role_id: string | null
+          assignable_ceiling: string | null
+          is_administrative: boolean
+          created_at: string
+          updated_at: string
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          organization_id?: string | null
+          key: string
+          name: string
+          description?: string | null
+          scope: RoleScopeDb
+          is_system?: boolean
+          parent_role_id?: string | null
+          assignable_ceiling?: string | null
+          is_administrative?: boolean
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          organization_id?: string | null
+          key?: string
+          name?: string
+          description?: string | null
+          scope?: RoleScopeDb
+          is_system?: boolean
+          parent_role_id?: string | null
+          assignable_ceiling?: string | null
+          is_administrative?: boolean
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Relationships: []
+      }
+      role_permissions: {
+        Row: {
+          role_id: string
+          permission_key: string
+        }
+        Insert: {
+          role_id: string
+          permission_key: string
+        }
+        Update: {
+          role_id?: string
+          permission_key?: string
+        }
+        Relationships: []
+      }
+      user_permission_overrides: {
+        Row: {
+          id: string
+          organization_id: string
+          workspace_id: string | null
+          principal_id: string
+          permission_key: string
+          effect: PermissionEffectDb
+          scope_type: OverrideScopeDb
+          scope_id: string | null
+          reason: string
+          granted_by: string | null
+          expires_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          workspace_id?: string | null
+          principal_id: string
+          permission_key: string
+          effect: PermissionEffectDb
+          scope_type?: OverrideScopeDb
+          scope_id?: string | null
+          reason: string
+          granted_by?: string | null
+          expires_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          workspace_id?: string | null
+          principal_id?: string
+          permission_key?: string
+          effect?: PermissionEffectDb
+          scope_type?: OverrideScopeDb
+          scope_id?: string | null
+          reason?: string
+          granted_by?: string | null
+          expires_at?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      resource_grants: {
+        Row: {
+          id: string
+          workspace_id: string
+          resource_type: string
+          resource_id: string
+          principal_id: string | null
+          role_id: string | null
+          client_account_id: string | null
+          effect: PermissionEffectDb
+          capability: string
+          reason: string | null
+          granted_by: string | null
+          expires_at: string | null
+          created_at: string
+          updated_at: string
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          resource_type: string
+          resource_id: string
+          principal_id?: string | null
+          role_id?: string | null
+          client_account_id?: string | null
+          effect?: PermissionEffectDb
+          capability?: string
+          reason?: string | null
+          granted_by?: string | null
+          expires_at?: string | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          resource_type?: string
+          resource_id?: string
+          principal_id?: string | null
+          role_id?: string | null
+          client_account_id?: string | null
+          effect?: PermissionEffectDb
+          capability?: string
+          reason?: string | null
+          granted_by?: string | null
+          expires_at?: string | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Relationships: []
+      }
+      organization_policies: {
+        Row: {
+          organization_id: string
+          policy_key: string
+          value: Json
+          updated_at: string
+        }
+        Insert: {
+          organization_id: string
+          policy_key: string
+          value?: Json
+          updated_at?: string
+        }
+        Update: {
+          organization_id?: string
+          policy_key?: string
+          value?: Json
+          updated_at?: string
         }
         Relationships: []
       }

@@ -185,7 +185,7 @@ export async function getMemberDetail(
     avatarUrl: names.get(r.user_id)?.avatarUrl ?? null,
   }))
 
-  const showComp = canViewCompensation(ctx.role)
+  const showComp = await canViewCompensation(ctx)
 
   return {
     userId: memberId,

@@ -46,7 +46,7 @@ export async function requestLeave(
 
     // Filing for someone else requires manage rights; otherwise it is your own.
     const targetUserId = d.userId ?? ctx.userId
-    if (targetUserId !== ctx.userId && !canManageTeam(ctx.role)) {
+    if (targetUserId !== ctx.userId && !(await canManageTeam(ctx))) {
       return { ok: false, error: 'forbidden' }
     }
 
@@ -153,7 +153,7 @@ export async function cancelLeave(
 
     const row = await getLeaveRow(ctx, parsed.data.id)
     if (!row) return { ok: false, error: 'Request not found' }
-    if (row.user_id !== ctx.userId && !canManageTeam(ctx.role)) {
+    if (row.user_id !== ctx.userId && !(await canManageTeam(ctx))) {
       return { ok: false, error: 'forbidden' }
     }
     if (row.status === 'cancelled') return { ok: true, data: { id: row.id } }

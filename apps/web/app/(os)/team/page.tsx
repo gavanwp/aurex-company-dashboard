@@ -26,7 +26,7 @@ export default async function TeamPage({
   searchParams: Promise<{ specialization?: string; search?: string }>
 }) {
   const [{ specialization, search }, ctx] = await Promise.all([searchParams, getWorkspaceContext()])
-  if (!canViewTeam(ctx.role)) notFound()
+  if (!(await canViewTeam(ctx))) notFound()
 
   const specTab =
     specialization && (MEMBER_SPECIALIZATIONS as readonly string[]).includes(specialization)

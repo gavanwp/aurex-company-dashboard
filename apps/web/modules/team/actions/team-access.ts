@@ -2,52 +2,43 @@ import 'server-only'
 
 import { revalidatePath } from 'next/cache'
 import { ActionError } from '@/lib/action-kit'
+import { hasPermission, requirePermission } from '@/lib/permissions'
 import { getWorkspaceContext, type WorkspaceContext } from '@/lib/workspace-context'
 
-// Capability note: the can() map carries only Phase-1 capabilities, so Team & HR
-// guards are expressed by role here — the same approach finance, proposals,
-// meetings and contracts documented for their own guards. RLS on hr_profiles /
-// hr_leave_requests (0016) is the database backstop. When the capability-map
-// expansion lands these become team.view / team.manage in can().
-//
-// People ops belong to Owner / Admin / HR (06_Module_Breakdown.md §16): they
-// manage profiles and decide leave. Every internal member may view the directory
-// and file their own leave. Portal roles (client, guest) never see the team.
-
-const MANAGE_ROLES = new Set(['owner', 'admin', 'hr'])
-const READ_EXCLUDED_ROLES = new Set(['client', 'guest'])
-// Compensation is field-level restricted to Owner / HR / Finance (§16).
-const COMP_ROLES = new Set(['owner', 'hr', 'finance'])
+// Team & HR access — migrated to the data-driven RBAC engine (0019 cutover,
+// ADR-0008). Guards now resolve atomic permissions from the engine tables
+// instead of hardcoded role sets:
+//   manage profiles / decide leave → hr.profile.manage
+//   view the directory             → team.member.view
+//   see compensation (field-level) → hr.compensation.view
+// The seeded matrix + org-owner elevation preserve who had access before the
+// cutover (owner/admin/HR manage; owner/HR/finance see comp; all internal view).
 
 /** Mutations that manage other people: profile edits, leave decisions. */
 export async function requireTeamManage(): Promise<WorkspaceContext> {
   const ctx = await getWorkspaceContext()
-  if (!MANAGE_ROLES.has(ctx.role)) {
-    throw new ActionError('forbidden')
-  }
+  await requirePermission(ctx, 'hr.profile.manage')
   return ctx
 }
 
 /** Reads — every internal member may view the team; portal roles may not. */
 export async function requireTeamRead(): Promise<WorkspaceContext> {
   const ctx = await getWorkspaceContext()
-  if (READ_EXCLUDED_ROLES.has(ctx.role)) {
-    throw new ActionError('forbidden')
-  }
+  await requirePermission(ctx, 'team.member.view')
   return ctx
 }
 
-export function canManageTeam(role: string): boolean {
-  return MANAGE_ROLES.has(role)
+export function canManageTeam(ctx: WorkspaceContext): Promise<boolean> {
+  return hasPermission(ctx, 'hr.profile.manage')
 }
 
-export function canViewTeam(role: string): boolean {
-  return !READ_EXCLUDED_ROLES.has(role)
+export function canViewTeam(ctx: WorkspaceContext): Promise<boolean> {
+  return hasPermission(ctx, 'team.member.view')
 }
 
-/** Whether a role may see compensation figures (field-level rule). */
-export function canViewCompensation(role: string): boolean {
-  return COMP_ROLES.has(role)
+/** Whether the viewer may see compensation figures (field-level rule). */
+export function canViewCompensation(ctx: WorkspaceContext): Promise<boolean> {
+  return hasPermission(ctx, 'hr.compensation.view')
 }
 
 export function failure(err: unknown): { ok: false; error: string } {
