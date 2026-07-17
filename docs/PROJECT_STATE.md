@@ -77,12 +77,15 @@ pnpm --filter @aurexos/core exec vitest run           # 51 tests
   - **Meetings** — **pre-meeting brief** (assembles relationship context), live mode, decisions log, action-items → tasks.
   - **Contracts** — **renewal radar**, obligations → tasks, tokenized public signing `/c/[token]`, create-from-proposal.
   - **Team & HR** — directory (skill/capacity cards, search + specialization filter), member profiles (skills with proficiency meters, manager/reports, **field-level compensation** for Owner/HR/Finance), leave management (request → approve/reject/cancel lifecycle), people-overview tiles. Tables `hr_profiles` + `hr_leave_requests` (0016); events `hr.profile.*` / `hr.leave.*`.
+  - **Automation Studio** — authoring surface over the event core: automations list, builder (trigger event picker + ordered actions from a registry + failure policy), draft→activate→pause lifecycle, run-history view, recipe gallery. Tables `automations`/`automation_runs` (0011); events `automation.created/updated/activated/paused/deleted`. **Aurex AI integrated** (first live AI surface): NL **drafting** ("describe an automation → proposed draft for review") and a **Q&A assistant** ("quick answers"), both routed through the `packages/ai` gateway (Claude), prompts versioned in `packages/ai/prompts`, usage metered to `ai_usage` (R-AI2), graceful "add a key" fallback (R-AI6). _Event→run execution engine (background worker) is the remaining Phase-3 piece._
   - **Settings** (workspace, members, security).
 - **Platform:** `packages/ai` gateway (Claude/OpenAI/Gemini adapters, router, prompts, metering); notification-engine contracts; storage abstraction; jobs enqueue seam; Edge Function skeletons.
 
 ## 7. Not built yet (sidebar shows "Soon")
 
-Documents · Knowledge Base · Automation Studio · Analytics · AI Assistant (Aurex chat — **Phase 3 flagship**: gateway exists, LangGraph orchestration + RAG + tools + approvals deferred) · Client Portal (Phase 4). _Team & HR Phase-3 AI (capacity intelligence, skills-aware staffing, review drafting) and onboarding/offboarding checklists + review cycles are deferred; the Phase-2 core shipped._
+Documents · Knowledge Base · Analytics · AI Assistant (Aurex chat — **Phase 3 flagship**: gateway now wired to the app and live in Automation; workspace-wide LangGraph orchestration + RAG + typed tools + approval cards still deferred) · Client Portal (Phase 4). _Team & HR Phase-3 AI and Automation's event→run execution engine are deferred; the authoring/AI surfaces shipped._
+
+**AI is now wired into the app:** `apps/web/lib/ai/gateway.ts` builds the `packages/ai` gateway from env with a Supabase usage sink; `isAiConfigured()`/`getAiEnv()` in `lib/env.ts` gate it. Set `ANTHROPIC_API_KEY` in `apps/web/.env.local` to enable live AI (server-only var — restart, no rebuild needed). Without a key, AI surfaces degrade gracefully and the rest of the app is unaffected.
 
 ## 8. Performance state
 

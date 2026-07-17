@@ -102,6 +102,43 @@ export const AutomationRunSchema = z.object({
 })
 export type AutomationRun = z.infer<typeof AutomationRunSchema>
 
+// ── AI surfaces (R-AI: gateway-backed) ──────────────────────────────────────
+
+/** Input for the natural-language automation drafter. */
+export const DraftAutomationInput = z.object({
+  description: z.string().trim().min(4, 'Describe the automation you want').max(1_000),
+})
+export type DraftAutomationInput = z.infer<typeof DraftAutomationInput>
+
+/**
+ * What the model must return when drafting an automation. Parsed with this
+ * schema before it is ever shown or saved — a malformed draft is rejected, never
+ * guessed at (R-T3). The draft is always reviewed by a human before it can be
+ * activated (R-AI3): the drafter only proposes.
+ */
+export const AutomationDraftSchema = z.object({
+  name: z.string().min(1).max(200),
+  summary: z.string().max(600).optional(),
+  triggerEventType: z.string().min(1),
+  triggerFilter: AutomationTriggerFilterSchema.default({}),
+  actions: z
+    .array(
+      z.object({
+        actionKey: z.string().min(1).max(120),
+        input: z.record(z.string(), z.unknown()).default({}),
+        note: z.string().max(300).optional(),
+      }),
+    )
+    .default([]),
+})
+export type AutomationDraft = z.infer<typeof AutomationDraftSchema>
+
+/** Input for the automation Q&A assistant ("quick answers"). */
+export const AskAutomationInput = z.object({
+  question: z.string().trim().min(2, 'Ask a question').max(1_000),
+})
+export type AskAutomationInput = z.infer<typeof AskAutomationInput>
+
 // jobs (0011) are service-role-only; this input is consumed by the packages/db
 // admin wrapper's enqueue call, never by client code.
 export const EnqueueJobInput = z.object({

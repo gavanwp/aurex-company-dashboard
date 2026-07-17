@@ -92,7 +92,7 @@ const MODULE_NAV: NavItem[] = [
   { label: 'Team', href: '/team', icon: Users },
   { label: 'Documents', icon: FileText, soonHint: 'Documents are coming soon' },
   { label: 'Knowledge base', icon: BookOpen, soonHint: 'Knowledge base is coming soon' },
-  { label: 'Automation', icon: Workflow, soonHint: 'Automation is coming soon' },
+  { label: 'Automation', href: '/automations', icon: Workflow },
   { label: 'Analytics', icon: BarChart3, soonHint: 'Analytics is coming soon' },
 ]
 

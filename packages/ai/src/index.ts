@@ -40,7 +40,13 @@ export type {
 
 // Gateway config
 export { loadGatewayConfig, gatewayEnvSchema, PROVIDER_DATA_POLICIES } from './gateway/config'
-export type { AiGatewayConfig, TierRoute, RetryConfig, GatewayDefaults, GatewayEnv } from './gateway/config'
+export type {
+  AiGatewayConfig,
+  TierRoute,
+  RetryConfig,
+  GatewayDefaults,
+  GatewayEnv,
+} from './gateway/config'
 
 // Gateway engine + factory
 export {
@@ -51,7 +57,12 @@ export {
   DefaultRedactor,
   EmbedRequestSchema,
 } from './gateway/gateway'
-export type { AiGatewayDeps, BuildGatewayOptions, EmbedRequest, EmbedResponse } from './gateway/gateway'
+export type {
+  AiGatewayDeps,
+  BuildGatewayOptions,
+  EmbedRequest,
+  EmbedResponse,
+} from './gateway/gateway'
 
 // Provider adapters (constructing one directly is rare — prefer buildGateway)
 export { AnthropicAdapter } from './gateway/providers/anthropic'
@@ -69,16 +80,29 @@ export type { RouteInput, RouteDecision, WorkspaceRoutePrefs } from './router/ro
 
 // Prompts
 export { definePrompt } from './prompts/define-prompt'
-export type { PromptDefinition, RegisteredPrompt, DefinePromptOptions } from './prompts/define-prompt'
+export type {
+  PromptDefinition,
+  RegisteredPrompt,
+  DefinePromptOptions,
+} from './prompts/define-prompt'
 export { promptRegistry, getPrompt, requirePrompt } from './prompts/registry'
-export {
-  aurexSystemFrameV1,
-  aurexSystemFrameVariablesSchema,
-} from './prompts/aurex-system-frame'
+export { aurexSystemFrameV1, aurexSystemFrameVariablesSchema } from './prompts/aurex-system-frame'
 export type { AurexSystemFrameVariables } from './prompts/aurex-system-frame'
+export {
+  automationAssistantV1,
+  automationAssistantVariablesSchema,
+} from './prompts/automation-assistant'
+export type { AutomationAssistantVariables } from './prompts/automation-assistant'
+export { automationDraftV1, automationDraftVariablesSchema } from './prompts/automation-draft'
+export type { AutomationDraftVariables } from './prompts/automation-draft'
 
 // Usage metering
-export { AiUsageEventSchema, AI_USAGE_OUTCOMES, ConsoleUsageSink, SupabaseUsageSink } from './usage/usage'
+export {
+  AiUsageEventSchema,
+  AI_USAGE_OUTCOMES,
+  ConsoleUsageSink,
+  SupabaseUsageSink,
+} from './usage/usage'
 export type { AiUsageEvent, AiUsageOutcome, UsageSink, UsageTableClient } from './usage/usage'
 
 // Budgets

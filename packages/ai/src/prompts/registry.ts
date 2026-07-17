@@ -1,4 +1,6 @@
 import { aurexSystemFrameV1 } from './aurex-system-frame'
+import { automationAssistantV1 } from './automation-assistant'
+import { automationDraftV1 } from './automation-draft'
 import type { RegisteredPrompt } from './define-prompt'
 
 // Prompt registry (R-AI5). Definitions register here so callers resolve
@@ -7,7 +9,11 @@ import type { RegisteredPrompt } from './define-prompt'
 // result ref) lands with the ai migrations; this in-memory registry is its
 // build-time source of truth.
 
-const definitions: readonly RegisteredPrompt[] = [aurexSystemFrameV1]
+const definitions: readonly RegisteredPrompt[] = [
+  aurexSystemFrameV1,
+  automationAssistantV1,
+  automationDraftV1,
+]
 
 export const promptRegistry: ReadonlyMap<string, RegisteredPrompt> = new Map(
   definitions.map((definition) => [definition.id, definition]),
@@ -22,7 +28,9 @@ export function getPrompt(id: string): RegisteredPrompt | undefined {
 export function requirePrompt(id: string): RegisteredPrompt {
   const prompt = promptRegistry.get(id)
   if (prompt === undefined) {
-    throw new Error(`unknown prompt id "${id}" — prompts must be registered in packages/ai/src/prompts/registry.ts (R-AI5)`)
+    throw new Error(
+      `unknown prompt id "${id}" — prompts must be registered in packages/ai/src/prompts/registry.ts (R-AI5)`,
+    )
   }
   return prompt
 }

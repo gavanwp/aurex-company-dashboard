@@ -22,6 +22,15 @@ const EnvSchema = z.object({
   // register S4: token-encryption keys live outside the database). Byte-length
   // validation happens in lib/mailbox-crypto.ts, the only consumer.
   MAILBOX_TOKEN_KEY: z.string().min(1).optional(),
+  // ── AI gateway (server-only, OPTIONAL) ────────────────────────────────────
+  // Absent in environments without an AI provider: the app boots and AI
+  // surfaces render their "add a key" state (R-AI6). At least one provider key
+  // must be set for isAiConfigured() to enable live model calls. Tier/model
+  // overrides (AI_TIER_*, AI_MAX_OUTPUT_TOKENS, …) are read directly from
+  // process.env by getAiEnv() and validated inside packages/ai (R-S3 funnel).
+  ANTHROPIC_API_KEY: z.string().min(1).optional(),
+  OPENAI_API_KEY: z.string().min(1).optional(),
+  GEMINI_API_KEY: z.string().min(1).optional(),
 })
 
 export type Env = z.infer<typeof EnvSchema>
@@ -41,6 +50,9 @@ export function getEnv(): Env {
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
     MAILBOX_TOKEN_KEY: process.env.MAILBOX_TOKEN_KEY,
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY,
   })
 
   if (!parsed.success) {
@@ -72,6 +84,42 @@ export interface GmailEnv {
 export function isGmailConfigured(): boolean {
   const env = getEnv()
   return !!(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET && env.MAILBOX_TOKEN_KEY)
+}
+
+// ── AI gateway helpers ───────────────────────────────────────────────────────
+
+/**
+ * True when at least one model provider key is configured. AI surfaces gate on
+ * this to show either the live experience or an honest "add a key" state — the
+ * app must work without AI (R-AI6).
+ */
+export function isAiConfigured(): boolean {
+  const env = getEnv()
+  return !!(env.ANTHROPIC_API_KEY || env.OPENAI_API_KEY)
+}
+
+/**
+ * The env map handed to packages/ai `buildGateway`. This is the ONE place
+ * AI_* / provider-key env vars are read (R-S3); the gateway validates the map
+ * with its own Zod schema (gatewayEnvSchema). Tier/model overrides pass through
+ * untouched so model migrations stay config, not code.
+ */
+export function getAiEnv(): Readonly<Record<string, string | undefined>> {
+  return {
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+    AI_TIER_LIGHT: process.env.AI_TIER_LIGHT,
+    AI_TIER_STANDARD: process.env.AI_TIER_STANDARD,
+    AI_TIER_FRONTIER: process.env.AI_TIER_FRONTIER,
+    AI_TIER_EMBEDDINGS: process.env.AI_TIER_EMBEDDINGS,
+    AI_MAX_OUTPUT_TOKENS: process.env.AI_MAX_OUTPUT_TOKENS,
+    AI_TIMEOUT_MS: process.env.AI_TIMEOUT_MS,
+    AI_RETRY_MAX_ATTEMPTS: process.env.AI_RETRY_MAX_ATTEMPTS,
+    AI_RETRY_BASE_DELAY_MS: process.env.AI_RETRY_BASE_DELAY_MS,
+    AI_RETRY_MAX_DELAY_MS: process.env.AI_RETRY_MAX_DELAY_MS,
+    AI_PROVIDER_COOLDOWN_MS: process.env.AI_PROVIDER_COOLDOWN_MS,
+  }
 }
 
 /**

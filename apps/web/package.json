@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@aurexos/ai": "workspace:*",
     "@aurexos/core": "workspace:*",
     "@aurexos/db": "workspace:*",
     "@aurexos/ui": "workspace:*",

@@ -226,7 +226,9 @@ function toGeminiFunction(spec: ToolSpec): FunctionDeclaration {
     description: spec.description,
     // Caveat 1 above: Gemini accepts a restricted schema subset; the Phase 3
     // registry transform guarantees compatibility before tool traffic routes here.
-    parameters: spec.inputSchema as FunctionDeclaration['parameters'],
+    // Double assertion: the JSON-Schema record and Gemini's FunctionDeclarationSchema
+    // don't structurally overlap for the compiler, so narrow through `unknown`.
+    parameters: spec.inputSchema as unknown as FunctionDeclaration['parameters'],
   }
 }
 
