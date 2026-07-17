@@ -2,6 +2,7 @@ import 'server-only'
 
 import { can, type Capability, type DomainEventType } from '@aurexos/core'
 import type { TablesInsert } from '@aurexos/db'
+import { dispatchAutomationsForEvent } from '@/lib/automation-engine'
 import { getWorkspaceContext, type WorkspaceContext } from '@/lib/workspace-context'
 
 /**
@@ -58,6 +59,17 @@ export async function emitDomainEvent(
   } catch (err) {
     console.error(`emitDomainEvent(${e.eventType}) failed:`, err)
   }
+
+  // Automation Studio consumes the event stream here (R-A6): active automations
+  // whose trigger matches this event run now. Best-effort and fully shielded —
+  // the engine never throws, so a failing automation can never break the
+  // mutation that emitted the event.
+  await dispatchAutomationsForEvent(ctx, {
+    eventType: e.eventType,
+    entityType: e.entityType,
+    entityId: e.entityId,
+    payload: e.payload ?? {},
+  })
 }
 
 /**
