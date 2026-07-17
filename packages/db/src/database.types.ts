@@ -57,6 +57,16 @@ export type OrgMemberStatusDb = 'invited' | 'active' | 'suspended'
 export type RoleScopeDb = 'platform' | 'organization' | 'workspace' | 'portal'
 export type PermissionEffectDb = 'allow' | 'deny'
 export type OverrideScopeDb = 'organization' | 'workspace' | 'department' | 'team' | 'resource'
+export type AuthEventTypeDb =
+  | 'login'
+  | 'logout'
+  | 'mfa_challenge'
+  | 'mfa_enrolled'
+  | 'failure'
+  | 'password_reset'
+  | 'token_refresh'
+export type MfaTypeDb = 'totp' | 'webauthn' | 'sms'
+export type InvitationStatusDb = 'pending' | 'accepted' | 'revoked' | 'expired'
 export type EmploymentTypeDb = 'full_time' | 'part_time' | 'contractor' | 'intern'
 export type CompPeriodDb = 'hourly' | 'monthly' | 'annual'
 export type LeaveTypeDb = 'vacation' | 'sick' | 'personal' | 'unpaid' | 'other'
@@ -459,6 +469,259 @@ export interface Database {
           policy_key?: string
           value?: Json
           updated_at?: string
+        }
+        Relationships: []
+      }
+      sessions: {
+        Row: {
+          id: string
+          principal_id: string
+          organization_id: string | null
+          active_workspace_id: string | null
+          device_id: string | null
+          ip: string | null
+          user_agent: string | null
+          perm_epoch: number
+          impersonation: Json | null
+          created_at: string
+          last_active_at: string
+          expires_at: string | null
+          revoked_at: string | null
+        }
+        Insert: {
+          id?: string
+          principal_id: string
+          organization_id?: string | null
+          active_workspace_id?: string | null
+          device_id?: string | null
+          ip?: string | null
+          user_agent?: string | null
+          perm_epoch?: number
+          impersonation?: Json | null
+          created_at?: string
+          last_active_at?: string
+          expires_at?: string | null
+          revoked_at?: string | null
+        }
+        Update: {
+          principal_id?: string
+          organization_id?: string | null
+          active_workspace_id?: string | null
+          device_id?: string | null
+          ip?: string | null
+          user_agent?: string | null
+          perm_epoch?: number
+          impersonation?: Json | null
+          last_active_at?: string
+          expires_at?: string | null
+          revoked_at?: string | null
+        }
+        Relationships: []
+      }
+      devices: {
+        Row: {
+          id: string
+          principal_id: string
+          fingerprint_hash: string
+          name: string | null
+          os: string | null
+          last_ip: string | null
+          trusted: boolean
+          first_seen_at: string
+          last_seen_at: string
+          revoked_at: string | null
+        }
+        Insert: {
+          id?: string
+          principal_id: string
+          fingerprint_hash: string
+          name?: string | null
+          os?: string | null
+          last_ip?: string | null
+          trusted?: boolean
+          first_seen_at?: string
+          last_seen_at?: string
+          revoked_at?: string | null
+        }
+        Update: {
+          name?: string | null
+          os?: string | null
+          last_ip?: string | null
+          trusted?: boolean
+          last_seen_at?: string
+          revoked_at?: string | null
+        }
+        Relationships: []
+      }
+      auth_events: {
+        Row: {
+          id: string
+          principal_id: string | null
+          organization_id: string | null
+          type: AuthEventTypeDb
+          method: string | null
+          ip: string | null
+          geo: string | null
+          device_id: string | null
+          success: boolean
+          risk_score: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          principal_id?: string | null
+          organization_id?: string | null
+          type: AuthEventTypeDb
+          method?: string | null
+          ip?: string | null
+          geo?: string | null
+          device_id?: string | null
+          success?: boolean
+          risk_score?: number | null
+          created_at?: string
+        }
+        Update: {
+          success?: boolean
+          risk_score?: number | null
+        }
+        Relationships: []
+      }
+      mfa_factors: {
+        Row: {
+          id: string
+          principal_id: string
+          type: MfaTypeDb
+          label: string | null
+          secret_ref: string | null
+          verified_at: string | null
+          last_used_at: string | null
+          created_at: string
+          revoked_at: string | null
+        }
+        Insert: {
+          id?: string
+          principal_id: string
+          type: MfaTypeDb
+          label?: string | null
+          secret_ref?: string | null
+          verified_at?: string | null
+          last_used_at?: string | null
+          created_at?: string
+          revoked_at?: string | null
+        }
+        Update: {
+          label?: string | null
+          verified_at?: string | null
+          last_used_at?: string | null
+          revoked_at?: string | null
+        }
+        Relationships: []
+      }
+      api_keys: {
+        Row: {
+          id: string
+          organization_id: string
+          workspace_id: string | null
+          name: string
+          prefix: string
+          hash: string
+          scopes: string[]
+          created_by: string | null
+          last_used_at: string | null
+          expires_at: string | null
+          created_at: string
+          revoked_at: string | null
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          workspace_id?: string | null
+          name: string
+          prefix: string
+          hash: string
+          scopes?: string[]
+          created_by?: string | null
+          last_used_at?: string | null
+          expires_at?: string | null
+          created_at?: string
+          revoked_at?: string | null
+        }
+        Update: {
+          name?: string
+          scopes?: string[]
+          last_used_at?: string | null
+          expires_at?: string | null
+          revoked_at?: string | null
+        }
+        Relationships: []
+      }
+      invitations: {
+        Row: {
+          id: string
+          organization_id: string
+          workspace_id: string | null
+          email: string
+          role_id: string | null
+          overrides: Json
+          token_hash: string
+          status: InvitationStatusDb
+          invited_by: string | null
+          expires_at: string
+          accepted_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          workspace_id?: string | null
+          email: string
+          role_id?: string | null
+          overrides?: Json
+          token_hash: string
+          status?: InvitationStatusDb
+          invited_by?: string | null
+          expires_at: string
+          accepted_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          email?: string
+          role_id?: string | null
+          overrides?: Json
+          status?: InvitationStatusDb
+          accepted_at?: string | null
+        }
+        Relationships: []
+      }
+      impersonation_sessions: {
+        Row: {
+          id: string
+          organization_id: string | null
+          workspace_id: string | null
+          impersonator_id: string
+          target_principal_id: string
+          read_only: boolean
+          pages: Json
+          started_at: string
+          ends_at: string
+          revoked_at: string | null
+        }
+        Insert: {
+          id?: string
+          organization_id?: string | null
+          workspace_id?: string | null
+          impersonator_id: string
+          target_principal_id: string
+          read_only?: boolean
+          pages?: Json
+          started_at?: string
+          ends_at: string
+          revoked_at?: string | null
+        }
+        Update: {
+          read_only?: boolean
+          pages?: Json
+          revoked_at?: string | null
         }
         Relationships: []
       }
