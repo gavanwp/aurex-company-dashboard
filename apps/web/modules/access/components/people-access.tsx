@@ -61,7 +61,14 @@ function InviteDialog({ roles }: { roles: AssignableRole[] }) {
         toast.error(result.error)
         return
       }
-      toast.success('Invitation created')
+      // Email delivery is a follow-up — copy the accept link so it can be shared.
+      const url = `${window.location.origin}/invite/${result.data.token}`
+      try {
+        await navigator.clipboard.writeText(url)
+        toast.success('Invitation created — accept link copied to clipboard')
+      } catch {
+        toast.success('Invitation created')
+      }
       setEmail('')
       setOpen(false)
       router.refresh()

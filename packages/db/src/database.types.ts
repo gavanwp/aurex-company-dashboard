@@ -2799,6 +2799,33 @@ export interface Database {
         Args: Record<string, never>
         Returns: string
       }
+      has_permission: {
+        Args: { ws_id: string; perm: string }
+        Returns: boolean
+      }
+      is_org_member: {
+        Args: { org_id: string }
+        Returns: boolean
+      }
+      org_role_of: {
+        Args: { org_id: string }
+        Returns: OrgRoleDb | null
+      }
+      invitation_preview: {
+        Args: { raw_token: string }
+        Returns: {
+          email: string
+          org_name: string | null
+          workspace_name: string | null
+          role_name: string | null
+          valid: boolean
+          expires_at: string
+        }[]
+      }
+      accept_invitation: {
+        Args: { raw_token: string }
+        Returns: string
+      }
     }
     Enums: {
       workspace_role: WorkspaceRoleDb

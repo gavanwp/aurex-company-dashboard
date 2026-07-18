@@ -14,6 +14,7 @@ const PUBLIC_PATHS = [
   '/auth',
   '/p',
   '/c',
+  '/invite',
 ] as const
 
 // Signed-in users have no business on these — bounce them to the OS.

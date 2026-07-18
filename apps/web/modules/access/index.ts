@@ -2,6 +2,8 @@
 
 export { PeopleAccess } from './components/people-access'
 export { RolesCatalog } from './components/roles-catalog'
+export { InviteAccept } from './components/invite-accept'
+export { getInvitationPreview, type InvitationPreview } from './queries/get-invitation'
 export {
   getRoster,
   getPendingInvitations,

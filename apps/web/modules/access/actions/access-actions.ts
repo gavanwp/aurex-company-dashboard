@@ -22,7 +22,7 @@ function revalidateAccess(): void {
 
 export async function inviteUser(
   input: z.input<typeof InviteInput>,
-): Promise<ActionResult<{ id: string }>> {
+): Promise<ActionResult<{ id: string; token: string }>> {
   const parsed = InviteInput.safeParse(input)
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Invalid invite' }
@@ -74,7 +74,9 @@ export async function inviteUser(
       after: { email: email.toLowerCase(), roleId },
     })
     revalidateAccess()
-    return { ok: true, data: { id: created.id } }
+    // The plaintext token is returned once so the inviter can copy the accept
+    // link (email delivery is a follow-up); only the hash is persisted.
+    return { ok: true, data: { id: created.id, token } }
   } catch (err) {
     return {
       ok: false,
