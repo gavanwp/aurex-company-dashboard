@@ -21,3 +21,8 @@ export function canViewAccess(ctx: WorkspaceContext): Promise<boolean> {
 export function canViewRoles(ctx: WorkspaceContext): Promise<boolean> {
   return hasPermission(ctx, 'users.role.assign')
 }
+
+/** Whether the viewer may manage API keys. */
+export function canManageApiKeys(ctx: WorkspaceContext): Promise<boolean> {
+  return hasPermission(ctx, 'settings.apikey.manage')
+}

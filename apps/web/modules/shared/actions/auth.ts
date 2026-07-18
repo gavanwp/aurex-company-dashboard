@@ -35,8 +35,36 @@ export async function login(email: string, password: string): Promise<ActionResu
   if (!parsed.success) return { ok: false, error: firstIssue(parsed.error) }
 
   const supabase = await createClient()
-  const { error } = await supabase.auth.signInWithPassword(parsed.data)
+  const { data, error } = await supabase.auth.signInWithPassword(parsed.data)
   if (error) return { ok: false, error: mapAuthError(error) }
+
+  // Record the login + a session row for the Security surface (0021). Best-effort:
+  // wrapped so a recording failure never blocks sign-in. RLS lets the just-authed
+  // user insert their own auth_events / sessions rows.
+  const userId = data.user?.id
+  if (userId) {
+    try {
+      const { data: orgm } = await supabase
+        .from('organization_members')
+        .select('organization_id')
+        .eq('principal_id', userId)
+        .limit(1)
+        .maybeSingle()
+      const organizationId = orgm?.organization_id ?? null
+      await supabase.from('auth_events').insert({
+        principal_id: userId,
+        organization_id: organizationId,
+        type: 'login',
+        method: 'password',
+        success: true,
+      })
+      await supabase
+        .from('sessions')
+        .insert({ principal_id: userId, organization_id: organizationId })
+    } catch {
+      /* best-effort telemetry — never block login */
+    }
+  }
 
   redirect('/dashboard')
 }

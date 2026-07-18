@@ -13,4 +13,18 @@ export {
   type AssignableRole,
 } from './queries/get-access'
 export { getRolesCatalog, type RoleCatalogRow } from './queries/get-roles'
-export { canManageAccess, canViewAccess, canViewRoles } from './actions/access-guards'
+export { ApiKeysManager } from './components/api-keys-manager'
+export { getApiKeys, type ApiKeyRow } from './queries/get-api-keys'
+export { SessionsManager } from './components/sessions-manager'
+export {
+  getMySessions,
+  getMyLoginHistory,
+  type SessionRow,
+  type LoginEventRow,
+} from './queries/get-sessions'
+export {
+  canManageAccess,
+  canViewAccess,
+  canViewRoles,
+  canManageApiKeys,
+} from './actions/access-guards'
