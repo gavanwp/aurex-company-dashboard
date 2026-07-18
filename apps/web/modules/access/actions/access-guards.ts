@@ -26,3 +26,8 @@ export function canViewRoles(ctx: WorkspaceContext): Promise<boolean> {
 export function canManageApiKeys(ctx: WorkspaceContext): Promise<boolean> {
   return hasPermission(ctx, 'settings.apikey.manage')
 }
+
+/** Whether the viewer may see the org Security Center. */
+export function canViewSecurityCenter(ctx: WorkspaceContext): Promise<boolean> {
+  return hasPermission(ctx, 'security.audit.view')
+}

@@ -1,26 +1,19 @@
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@aurexos/ui/components/button'
 import { PageHeader } from '@aurexos/ui/components/page-header'
 import { getWorkspaceContext } from '@/lib/workspace-context'
-import {
-  getMfaStatus,
-  getMyLoginHistory,
-  getMySessions,
-  MfaManager,
-  SessionsManager,
-} from '@/modules/access'
+import { canViewSecurityCenter, getSecurityOverview, SecurityCenter } from '@/modules/access'
 
-export const metadata: Metadata = { title: 'Sessions & security' }
+export const metadata: Metadata = { title: 'Security Center' }
 
-export default async function SessionsPage() {
+export default async function SecurityCenterPage() {
   const ctx = await getWorkspaceContext()
-  const [sessions, history, mfa] = await Promise.all([
-    getMySessions(ctx),
-    getMyLoginHistory(ctx),
-    getMfaStatus(),
-  ])
+  if (!(await canViewSecurityCenter(ctx))) notFound()
+
+  const overview = await getSecurityOverview(ctx)
 
   return (
     <div className="space-y-8">
@@ -32,12 +25,11 @@ export default async function SessionsPage() {
           </Link>
         </Button>
         <PageHeader
-          title="Sessions & security"
-          description="Two-factor authentication, where you’re signed in, and recent activity."
+          title="Security Center"
+          description="Your organization’s security posture at a glance — MFA coverage, elevated access, and risk signals."
         />
       </div>
-      <MfaManager status={mfa} />
-      <SessionsManager sessions={sessions} history={history} nowMs={Date.now()} />
+      <SecurityCenter overview={overview} />
     </div>
   )
 }

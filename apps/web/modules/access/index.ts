@@ -22,9 +22,18 @@ export {
   type SessionRow,
   type LoginEventRow,
 } from './queries/get-sessions'
+export { MfaManager } from './components/mfa-manager'
+export { getMfaStatus, type MfaStatus } from './queries/get-mfa'
+export { SecurityCenter } from './components/security-center'
+export {
+  getSecurityOverview,
+  type SecurityOverview,
+  type SecurityMember,
+} from './queries/get-security-overview'
 export {
   canManageAccess,
   canViewAccess,
   canViewRoles,
   canManageApiKeys,
+  canViewSecurityCenter,
 } from './actions/access-guards'

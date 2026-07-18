@@ -1,10 +1,17 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ChevronRight, KeyRound, MonitorSmartphone, Users, type LucideIcon } from 'lucide-react'
+import {
+  ChevronRight,
+  KeyRound,
+  MonitorSmartphone,
+  ShieldCheck,
+  Users,
+  type LucideIcon,
+} from 'lucide-react'
 import { Card } from '@aurexos/ui/components/card'
 import { PageHeader } from '@aurexos/ui/components/page-header'
 import { getWorkspaceContext } from '@/lib/workspace-context'
-import { canManageApiKeys, canViewAccess } from '@/modules/access'
+import { canManageApiKeys, canViewAccess, canViewSecurityCenter } from '@/modules/access'
 import { SecuritySettings, WorkspaceSettings } from '@/modules/settings'
 
 export const metadata: Metadata = { title: 'Settings' }
@@ -42,7 +49,11 @@ function SettingLink({
 
 export default async function SettingsPage() {
   const ctx = await getWorkspaceContext()
-  const [showAccess, showApiKeys] = await Promise.all([canViewAccess(ctx), canManageApiKeys(ctx)])
+  const [showAccess, showApiKeys, showSecurity] = await Promise.all([
+    canViewAccess(ctx),
+    canManageApiKeys(ctx),
+    canViewSecurityCenter(ctx),
+  ])
 
   return (
     <div className="space-y-6">
@@ -57,11 +68,19 @@ export default async function SettingsPage() {
             description="Members, roles, and invitations"
           />
         ) : null}
+        {showSecurity ? (
+          <SettingLink
+            href="/settings/security"
+            icon={ShieldCheck}
+            title="Security Center"
+            description="MFA coverage, elevated access, and risk signals"
+          />
+        ) : null}
         <SettingLink
           href="/settings/sessions"
           icon={MonitorSmartphone}
-          title="Sessions & devices"
-          description="Where you’re signed in and recent activity"
+          title="Sessions & security"
+          description="Two-factor auth, sessions, and sign-in activity"
         />
         {showApiKeys ? (
           <SettingLink
