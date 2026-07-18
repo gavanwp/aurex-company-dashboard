@@ -27,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@aurexos/ui/components/select'
-import { inviteUser, revokeInvitation } from '../actions/access-actions'
+import { changeMemberRole, inviteUser, revokeInvitation } from '../actions/access-actions'
 import type { AssignableRole, InvitationRow, RosterRow } from '../queries/get-access'
 
 function formatDate(iso: string): string {
@@ -125,6 +125,39 @@ function InviteDialog({ roles }: { roles: AssignableRole[] }) {
   )
 }
 
+function MemberRoleControl({ member, roles }: { member: RosterRow; roles: AssignableRole[] }) {
+  const router = useRouter()
+  const [isPending, startTransition] = React.useTransition()
+
+  const onChange = (roleId: string) => {
+    if (roleId === member.roleId) return
+    startTransition(async () => {
+      const result = await changeMemberRole({ userId: member.userId, roleId })
+      if (!result.ok) {
+        toast.error(result.error)
+        return
+      }
+      toast.success(`${member.name}’s role updated`)
+      router.refresh()
+    })
+  }
+
+  return (
+    <Select value={member.roleId ?? undefined} onValueChange={onChange} disabled={isPending}>
+      <SelectTrigger className="h-8 w-[11rem]" aria-label={`Role for ${member.name}`}>
+        <SelectValue placeholder="Set role" />
+      </SelectTrigger>
+      <SelectContent>
+        {roles.map((r) => (
+          <SelectItem key={r.id} value={r.id}>
+            {r.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+}
+
 function PendingRow({ invite, canManage }: { invite: InvitationRow; canManage: boolean }) {
   const router = useRouter()
   const [isPending, startTransition] = React.useTransition()
@@ -209,9 +242,13 @@ export function PeopleAccess({ roster, invitations, roles, canManage }: PeopleAc
                     <p className="truncate text-xs text-muted-foreground">{m.email}</p>
                   </div>
                 </div>
-                <Badge variant="accent-soft" className="shrink-0">
-                  {m.roleName}
-                </Badge>
+                {canManage && !m.isYou && !m.isOwner ? (
+                  <MemberRoleControl member={m} roles={roles} />
+                ) : (
+                  <Badge variant="accent-soft" className="shrink-0">
+                    {m.roleName}
+                  </Badge>
+                )}
               </div>
             ))}
           </CardContent>

@@ -84,6 +84,101 @@ export async function inviteUser(
   }
 }
 
+// New role key → closest legacy workspace_role enum. The engine (role_id) is the
+// source of truth post-cutover; the legacy `role` column is kept in sync only so
+// the RLS backstop workspace_role_of() stays consistent. Nothing maps TO 'owner'
+// (workspace ownership changes via the org ownership-transfer flow, not here).
+const LEGACY_ROLE: Record<string, string> = {
+  operations_manager: 'admin',
+  project_manager: 'project_manager',
+  sales_manager: 'sales',
+  marketing_manager: 'sales',
+  finance_manager: 'finance',
+  hr_manager: 'hr',
+  team_lead: 'member',
+  employee: 'member',
+  designer: 'member',
+  developer: 'member',
+  seo_specialist: 'member',
+  content_writer: 'member',
+  ai_automation_engineer: 'member',
+  support_agent: 'member',
+  client: 'client',
+  guest: 'guest',
+}
+
+const ChangeRoleInput = z.object({
+  userId: z.string().uuid(),
+  roleId: z.string().uuid(),
+})
+
+export async function changeMemberRole(
+  input: z.input<typeof ChangeRoleInput>,
+): Promise<ActionResult<{ userId: string }>> {
+  const parsed = ChangeRoleInput.safeParse(input)
+  if (!parsed.success) return { ok: false, error: 'Invalid role change' }
+  try {
+    const ctx = await getWorkspaceContext()
+    await requirePermission(ctx, 'users.role.assign')
+    const { userId, roleId } = parsed.data
+
+    if (userId === ctx.userId) {
+      return { ok: false, error: 'You can’t change your own role' }
+    }
+
+    const { data: member } = await ctx.supabase
+      .from('workspace_members')
+      .select('user_id, role, role_id')
+      .eq('workspace_id', ctx.workspace.id)
+      .eq('user_id', userId)
+      .maybeSingle()
+    if (!member) return { ok: false, error: 'Not a workspace member' }
+    if (member.role === 'owner') {
+      return { ok: false, error: 'The workspace owner’s role is changed via ownership transfer' }
+    }
+
+    // The target must be a real, assignable system role (workspace/portal scope).
+    const { data: role } = await ctx.supabase
+      .from('roles')
+      .select('key, scope, is_system')
+      .eq('id', roleId)
+      .maybeSingle()
+    if (!role || !role.is_system || (role.scope !== 'workspace' && role.scope !== 'portal')) {
+      return { ok: false, error: 'That role can’t be assigned here' }
+    }
+
+    const legacy = (LEGACY_ROLE[role.key] ?? 'member') as never
+    const { error } = await ctx.supabase
+      .from('workspace_members')
+      .update({ role_id: roleId, role: legacy })
+      .eq('workspace_id', ctx.workspace.id)
+      .eq('user_id', userId)
+    if (error) return { ok: false, error: 'Could not change the role' }
+
+    await emitDomainEvent(ctx, {
+      eventType: 'workspace.member.role_changed',
+      entityType: 'workspace_member',
+      entityId: userId,
+      payload: { roleId, roleKey: role.key },
+    })
+    await writeAudit(ctx, {
+      action: 'workspace.member.role_changed',
+      entityType: 'workspace_member',
+      entityId: userId,
+      before: { roleId: member.role_id },
+      after: { roleId, roleKey: role.key },
+    })
+    revalidateAccess()
+    return { ok: true, data: { userId } }
+  } catch (err) {
+    return {
+      ok: false,
+      error:
+        err instanceof Error && err.message === 'forbidden' ? 'forbidden' : 'Something went wrong',
+    }
+  }
+}
+
 const RevokeInput = z.object({ id: z.string().uuid() })
 
 export async function revokeInvitation(

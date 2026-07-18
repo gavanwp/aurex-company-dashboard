@@ -15,6 +15,8 @@ export interface RosterRow {
   roleName: string
   status: string
   isYou: boolean
+  /** The workspace owner's role is changed via ownership transfer, not here. */
+  isOwner: boolean
 }
 
 export interface InvitationRow {
@@ -67,9 +69,12 @@ async function profileNames(
 export async function getRoster(ctx: WorkspaceContext): Promise<RosterRow[]> {
   const { data: members } = await ctx.supabase
     .from('workspace_members')
-    .select('user_id, role_id')
+    .select('user_id, role, role_id')
     .eq('workspace_id', ctx.workspace.id)
-  const rows = (members ?? []) as Pick<Tables<'workspace_members'>, 'user_id' | 'role_id'>[]
+  const rows = (members ?? []) as Pick<
+    Tables<'workspace_members'>,
+    'user_id' | 'role' | 'role_id'
+  >[]
   if (rows.length === 0) return []
 
   const [names, roles] = await Promise.all([
@@ -95,6 +100,7 @@ export async function getRoster(ctx: WorkspaceContext): Promise<RosterRow[]> {
         roleName: r.role_id ? (roles.get(r.role_id) ?? 'Unknown role') : 'No role',
         status: 'active',
         isYou: r.user_id === ctx.userId,
+        isOwner: r.role === 'owner',
       }
     })
     .sort((a, b) => a.name.localeCompare(b.name))

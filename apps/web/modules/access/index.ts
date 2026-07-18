@@ -1,6 +1,7 @@
 // Public surface of modules/access — People & Access administration.
 
 export { PeopleAccess } from './components/people-access'
+export { RolesCatalog } from './components/roles-catalog'
 export {
   getRoster,
   getPendingInvitations,
@@ -9,4 +10,5 @@ export {
   type InvitationRow,
   type AssignableRole,
 } from './queries/get-access'
-export { canManageAccess, canViewAccess } from './actions/access-guards'
+export { getRolesCatalog, type RoleCatalogRow } from './queries/get-roles'
+export { canManageAccess, canViewAccess, canViewRoles } from './actions/access-guards'

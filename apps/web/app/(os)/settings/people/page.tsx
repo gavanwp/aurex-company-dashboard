@@ -1,13 +1,14 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, ShieldCheck } from 'lucide-react'
 import { Button } from '@aurexos/ui/components/button'
 import { PageHeader } from '@aurexos/ui/components/page-header'
 import { getWorkspaceContext } from '@/lib/workspace-context'
 import {
   canManageAccess,
   canViewAccess,
+  canViewRoles,
   getAssignableRoles,
   getPendingInvitations,
   getRoster,
@@ -20,11 +21,12 @@ export default async function PeopleAccessPage() {
   const ctx = await getWorkspaceContext()
   if (!(await canViewAccess(ctx))) notFound()
 
-  const [roster, invitations, roles, canManage] = await Promise.all([
+  const [roster, invitations, roles, canManage, showRoles] = await Promise.all([
     getRoster(ctx),
     getPendingInvitations(ctx),
     getAssignableRoles(ctx),
     canManageAccess(ctx),
+    canViewRoles(ctx),
   ])
 
   return (
@@ -39,6 +41,16 @@ export default async function PeopleAccessPage() {
         <PageHeader
           title="People & access"
           description="Manage who’s in this workspace, their roles, and pending invitations."
+          actions={
+            showRoles ? (
+              <Button asChild variant="outline" size="sm">
+                <Link href="/settings/roles">
+                  <ShieldCheck className="mr-1.5 h-4 w-4" />
+                  Roles &amp; permissions
+                </Link>
+              </Button>
+            ) : null
+          }
         />
       </div>
       <PeopleAccess roster={roster} invitations={invitations} roles={roles} canManage={canManage} />

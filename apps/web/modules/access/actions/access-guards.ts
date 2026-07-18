@@ -16,3 +16,8 @@ export function canManageAccess(ctx: WorkspaceContext): Promise<boolean> {
 export function canViewAccess(ctx: WorkspaceContext): Promise<boolean> {
   return hasPermission(ctx, 'users.user.view')
 }
+
+/** Whether the viewer may see the Roles catalog (anyone who assigns roles). */
+export function canViewRoles(ctx: WorkspaceContext): Promise<boolean> {
+  return hasPermission(ctx, 'users.role.assign')
+}
