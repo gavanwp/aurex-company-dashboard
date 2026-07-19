@@ -25,6 +25,7 @@ export type TaskPriorityDb = 'none' | 'low' | 'medium' | 'high' | 'urgent'
 export type KbSpaceAclKindDb = 'workspace' | 'role' | 'members' | 'client_facing'
 export type KbVerificationStateDb = 'verified' | 'needs_review' | 'stale'
 export type DocumentVersionCauseDb = 'manual' | 'major_edit' | 'publish' | 'restore'
+export type DocumentFileVersionCauseDb = 'upload' | 'replace' | 'restore'
 export type FileAvStatusDb = 'pending' | 'clean' | 'infected' | 'quarantined'
 export type AiMessageRoleDb = 'user' | 'assistant' | 'tool' | 'system'
 export type AiRunTriggerDb = 'chat' | 'proactive' | 'automation'
@@ -1211,6 +1212,222 @@ export interface Database {
           created_at?: string
           updated_at?: string
           deleted_at?: string | null
+        }
+        Relationships: []
+      }
+      document_folders: {
+        Row: {
+          id: string
+          workspace_id: string
+          parent_id: string | null
+          name: string
+          description: string | null
+          created_by: string | null
+          updated_by: string | null
+          created_at: string
+          updated_at: string
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          parent_id?: string | null
+          name: string
+          description?: string | null
+          created_by?: string | null
+          updated_by?: string | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          parent_id?: string | null
+          name?: string
+          description?: string | null
+          created_by?: string | null
+          updated_by?: string | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Relationships: []
+      }
+      document_files: {
+        Row: {
+          id: string
+          workspace_id: string
+          folder_id: string | null
+          name: string
+          description: string | null
+          current_version_id: string | null
+          current_version: number
+          mime: string | null
+          size_bytes: number
+          created_by: string | null
+          updated_by: string | null
+          created_at: string
+          updated_at: string
+          archived_at: string | null
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          folder_id?: string | null
+          name: string
+          description?: string | null
+          current_version_id?: string | null
+          current_version?: number
+          mime?: string | null
+          size_bytes?: number
+          created_by?: string | null
+          updated_by?: string | null
+          created_at?: string
+          updated_at?: string
+          archived_at?: string | null
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          folder_id?: string | null
+          name?: string
+          description?: string | null
+          current_version_id?: string | null
+          current_version?: number
+          mime?: string | null
+          size_bytes?: number
+          created_by?: string | null
+          updated_by?: string | null
+          created_at?: string
+          updated_at?: string
+          archived_at?: string | null
+          deleted_at?: string | null
+        }
+        Relationships: []
+      }
+      document_file_versions: {
+        Row: {
+          id: string
+          workspace_id: string
+          document_id: string
+          version: number
+          file_id: string | null
+          filename: string
+          mime: string | null
+          size_bytes: number
+          checksum: string | null
+          cause: DocumentFileVersionCauseDb
+          created_by: string | null
+          updated_by: string | null
+          created_at: string
+          updated_at: string
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          document_id: string
+          version: number
+          file_id?: string | null
+          filename: string
+          mime?: string | null
+          size_bytes?: number
+          checksum?: string | null
+          cause?: DocumentFileVersionCauseDb
+          created_by?: string | null
+          updated_by?: string | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          document_id?: string
+          version?: number
+          file_id?: string | null
+          filename?: string
+          mime?: string | null
+          size_bytes?: number
+          checksum?: string | null
+          cause?: DocumentFileVersionCauseDb
+          created_by?: string | null
+          updated_by?: string | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Relationships: []
+      }
+      document_tags: {
+        Row: {
+          id: string
+          workspace_id: string
+          name: string
+          color: string | null
+          created_by: string | null
+          updated_by: string | null
+          created_at: string
+          updated_at: string
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          name: string
+          color?: string | null
+          created_by?: string | null
+          updated_by?: string | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          name?: string
+          color?: string | null
+          created_by?: string | null
+          updated_by?: string | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Relationships: []
+      }
+      document_tag_assignments: {
+        Row: {
+          id: string
+          workspace_id: string
+          document_id: string
+          tag_id: string
+          created_by: string | null
+          updated_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          document_id: string
+          tag_id: string
+          created_by?: string | null
+          updated_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          document_id?: string
+          tag_id?: string
+          created_by?: string | null
+          updated_by?: string | null
+          created_at?: string
+          updated_at?: string
         }
         Relationships: []
       }

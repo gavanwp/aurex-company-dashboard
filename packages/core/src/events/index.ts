@@ -26,6 +26,18 @@ export const DOMAIN_EVENTS = [
   'crm.deal.stage_changed',
   'crm.deal.deleted',
   'documents.document.published',
+  // Documents DMS (0024): folder + file lifecycle. Distinct from the block-doc
+  // `documents.document.published` above (that's the future Pages/KB substrate).
+  'documents.folder.created',
+  'documents.folder.renamed',
+  'documents.folder.deleted',
+  'documents.document.uploaded',
+  'documents.document.renamed',
+  'documents.document.moved',
+  'documents.document.archived',
+  'documents.document.restored',
+  'documents.document.deleted',
+  'documents.document.versioned',
   'kb.page.verified',
   'finance.invoice.created',
   'finance.invoice.sent',
