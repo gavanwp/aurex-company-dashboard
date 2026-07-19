@@ -160,6 +160,11 @@
   body {
     @apply bg-background text-foreground antialiased;
     text-rendering: optimizeLegibility;
+    /* Never let a stray wide child scroll the whole page sideways on mobile. */
+    overflow-x: hidden;
+    /* Stop iOS from inflating text on orientation change; keep taps clean. */
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
