@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus } from 'lucide-react'
+import { ChevronLeft, Plus } from 'lucide-react'
 import { Button } from '@aurexos/ui/components/button'
 import { Card, CardContent } from '@aurexos/ui/components/card'
 import { PageHeader } from '@aurexos/ui/components/page-header'
@@ -98,18 +98,36 @@ export function EmailCenterView({
         </TabsList>
       </Tabs>
 
+      {/* Master-detail. On lg+ both panes sit side by side. On smaller screens
+          it's a single view: the list until a thread is opened, then the detail
+          with a back link — no endless scroll past the whole inbox on a phone. */}
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-        <ThreadList
-          threads={threads}
-          selectedId={selected?.id ?? null}
-          onSelect={(id) => navigate(statusTab, id)}
-          onLogEmail={() => setLogOpen(true)}
-        />
-        <Card>
-          <CardContent className="p-5">
-            <ThreadDetail thread={selected} options={options} />
-          </CardContent>
-        </Card>
+        <div className={cn(selected && 'hidden lg:block')}>
+          <ThreadList
+            threads={threads}
+            selectedId={selected?.id ?? null}
+            onSelect={(id) => navigate(statusTab, id)}
+            onLogEmail={() => setLogOpen(true)}
+          />
+        </div>
+        <div className={cn(!selected && 'hidden lg:block')}>
+          {selected ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="-ml-2 mb-2 w-fit text-muted-foreground lg:hidden"
+              onClick={() => navigate(statusTab, null)}
+            >
+              <ChevronLeft className="mr-1 h-4 w-4" />
+              Back to inbox
+            </Button>
+          ) : null}
+          <Card>
+            <CardContent className="p-4 sm:p-5">
+              <ThreadDetail thread={selected} options={options} />
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Header CTA always starts a new thread; logging into an existing one
