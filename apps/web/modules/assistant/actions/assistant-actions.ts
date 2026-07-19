@@ -5,6 +5,7 @@ import { ApproveAurexInput, AskAurexInput, type ProposedAction } from '@aurexos/
 import { aurexAssistantV3, GatewayError, type ChatMessage } from '@aurexos/ai'
 import { writeAudit, type ActionResult } from '@/lib/action-kit'
 import { buildWorkspaceGateway } from '@/lib/ai/gateway'
+import { friendlyGatewayError } from '@/lib/ai/gateway-errors'
 import { isAiConfigured } from '@/lib/env'
 import { hasPermission, requirePermission } from '@/lib/permissions'
 import { getWorkspaceContext } from '@/lib/workspace-context'
@@ -28,21 +29,6 @@ const MAX_TOOL_ROUNDS = 4
 // Aurex assistant chat (R-AI1: all model calls via packages/ai; R-AI2: usage
 // metered by the gateway; R-AI6: honest degrade when no provider is configured).
 // Phase 1 — grounded in the workspace snapshot; no tools yet.
-
-function friendlyGatewayError(err: GatewayError): string {
-  switch (err.code) {
-    case 'rate_limit':
-      return 'Aurex is rate-limited right now — try again in a moment.'
-    case 'timeout':
-      return 'Aurex took too long to respond — try again.'
-    case 'budget_exceeded':
-      return 'This workspace has reached its AI budget.'
-    case 'invalid_request':
-      return 'That request could not be processed.'
-    default:
-      return 'Aurex is unavailable right now.'
-  }
-}
 
 export async function askAurex(
   input: z.input<typeof AskAurexInput>,

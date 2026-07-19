@@ -10,6 +10,7 @@ import {
 } from '@aurexos/ai'
 import { writeAudit, type ActionResult } from '@/lib/action-kit'
 import { buildWorkspaceGateway } from '@/lib/ai/gateway'
+import { friendlyGatewayError } from '@/lib/ai/gateway-errors'
 import { isAiConfigured } from '@/lib/env'
 import { actionCatalogText, actionDef, triggerCatalogText, triggerDef } from '../constants'
 import { getAutomationsSummary } from '../queries/get-automations'
@@ -18,24 +19,6 @@ import type { AssistantResult, DraftResult } from '../types'
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10)
-}
-
-function friendlyGatewayError(err: unknown): string {
-  if (err instanceof GatewayError) {
-    switch (err.code) {
-      case 'rate_limit':
-        return 'Aurex is rate-limited right now — try again in a moment.'
-      case 'timeout':
-        return 'Aurex took too long to respond — try again.'
-      case 'budget_exceeded':
-        return 'This workspace has reached its AI budget.'
-      case 'invalid_request':
-        return 'That request could not be processed.'
-      default:
-        return 'Aurex is unavailable right now.'
-    }
-  }
-  return 'Aurex is unavailable right now.'
 }
 
 /** Pull the first balanced JSON object from model text (handles stray prose/fences). */
