@@ -200,14 +200,18 @@ function SidebarBody({
             )
           })}
 
-          {/* AI Assistant — a system surface, pinned after the modules
-              (Navigation.md §2.1). Phase 3; disabled until Aurex ships. */}
+          {/* AI Assistant — Aurex, a system surface pinned after the modules
+              (Navigation.md §2.1). */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <div
-                aria-disabled="true"
-                tabIndex={0}
-                className="mt-2 flex h-9 cursor-not-allowed items-center gap-2.5 rounded-md px-2.5 text-sm text-sidebar-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:h-8"
+              <Link
+                href="/assistant"
+                onClick={onNavigate}
+                aria-current={isActive(pathname, '/assistant') ? 'page' : undefined}
+                className={cn(
+                  'relative mt-2 flex h-9 items-center gap-2.5 rounded-md px-2.5 text-sm font-medium transition-colors md:h-8',
+                  isActive(pathname, '/assistant') ? activeStyles : inactiveStyles,
+                )}
               >
                 <span
                   className="flex size-5 shrink-0 items-center justify-center"
@@ -220,9 +224,11 @@ function SidebarBody({
                 <Badge variant="accent-soft" className={cn('px-1.5 py-0', labelClass)}>
                   New
                 </Badge>
-              </div>
+              </Link>
             </TooltipTrigger>
-            <TooltipContent side="right">Aurex arrives in Phase 3</TooltipContent>
+            <TooltipContent side="right" className={tipHidden}>
+              AI assistant
+            </TooltipContent>
           </Tooltip>
         </nav>
       </ScrollArea>
