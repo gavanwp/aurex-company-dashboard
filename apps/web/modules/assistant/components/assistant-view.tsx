@@ -9,6 +9,16 @@ import { Card } from '@aurexos/ui/components/card'
 import { askAurex } from '../actions/assistant-actions'
 import type { AssistantContext } from '../queries/get-assistant-context'
 
+/** A chat entry — a message plus, for Aurex turns, which read tools it used. */
+type ChatItem = AssistantMessage & { toolsUsed?: string[] }
+
+const TOOL_LABELS: Record<string, string> = {
+  list_tasks: 'tasks',
+  list_deals: 'pipeline',
+  list_invoices: 'invoices',
+  list_projects: 'projects',
+}
+
 function AurexAvatar() {
   return (
     <span
@@ -21,7 +31,7 @@ function AurexAvatar() {
   )
 }
 
-function MessageRow({ message }: { message: AssistantMessage }) {
+function MessageRow({ message }: { message: ChatItem }) {
   if (message.role === 'user') {
     return (
       <div className="flex justify-end">
@@ -31,10 +41,16 @@ function MessageRow({ message }: { message: AssistantMessage }) {
       </div>
     )
   }
+  const tools = message.toolsUsed ?? []
   return (
     <div className="flex gap-2.5">
       <AurexAvatar />
       <div className="min-w-0 flex-1 pt-0.5">
+        {tools.length > 0 ? (
+          <p className="mb-1 text-xs text-muted-foreground">
+            Looked up {tools.map((t) => TOOL_LABELS[t] ?? t).join(', ')}
+          </p>
+        ) : null}
         <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">
           {message.content}
         </p>
@@ -61,7 +77,7 @@ function ThinkingRow() {
 }
 
 export function AssistantView({ context }: { context: AssistantContext }) {
-  const [messages, setMessages] = React.useState<AssistantMessage[]>([])
+  const [messages, setMessages] = React.useState<ChatItem[]>([])
   const [input, setInput] = React.useState('')
   const [error, setError] = React.useState<string | null>(null)
   const [isPending, startTransition] = React.useTransition()
@@ -75,17 +91,22 @@ export function AssistantView({ context }: { context: AssistantContext }) {
   const send = (text: string) => {
     const content = text.trim()
     if (!content || isPending) return
-    const next: AssistantMessage[] = [...messages, { role: 'user', content }]
+    const next: ChatItem[] = [...messages, { role: 'user', content }]
     setMessages(next)
     setInput('')
     setError(null)
     startTransition(async () => {
-      const res = await askAurex({ messages: next })
+      const res = await askAurex({
+        messages: next.map((m) => ({ role: m.role, content: m.content })),
+      })
       if (!res.ok) {
         setError(res.error)
         return
       }
-      setMessages((m) => [...m, { role: 'assistant', content: res.data.reply }])
+      setMessages((m) => [
+        ...m,
+        { role: 'assistant', content: res.data.reply, toolsUsed: res.data.toolsUsed },
+      ])
     })
   }
 

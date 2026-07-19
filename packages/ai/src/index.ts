@@ -88,7 +88,11 @@ export type {
 export { promptRegistry, getPrompt, requirePrompt } from './prompts/registry'
 export { aurexSystemFrameV1, aurexSystemFrameVariablesSchema } from './prompts/aurex-system-frame'
 export type { AurexSystemFrameVariables } from './prompts/aurex-system-frame'
-export { aurexAssistantV1, aurexAssistantVariablesSchema } from './prompts/aurex-assistant'
+export {
+  aurexAssistantV1,
+  aurexAssistantV2,
+  aurexAssistantVariablesSchema,
+} from './prompts/aurex-assistant'
 export type { AurexAssistantVariables } from './prompts/aurex-assistant'
 export {
   automationAssistantV1,
