@@ -2,4 +2,4 @@
 
 export { AssistantView } from './components/assistant-view'
 export { getAssistantContext, type AssistantContext } from './queries/get-assistant-context'
-export { askAurex } from './actions/assistant-actions'
+export { askAurex, approveAurexAction } from './actions/assistant-actions'

@@ -1,18 +1,20 @@
 import 'server-only'
 
 import { z } from 'zod'
-import { formatMoney } from '@aurexos/core'
+import { formatMoney, TASK_PRIORITIES, type ProposedAction } from '@aurexos/core'
 import type { ToolSpec } from '@aurexos/ai'
 import type { WorkspaceContext } from '@/lib/workspace-context'
 
-// Aurex read-tools (Phase 2 — the agent leap). Each tool is a typed, RLS-scoped
-// read the model can call to look things up itself, instead of guessing. The
-// model's raw input is NEVER trusted: every tool validates with Zod before it
-// touches the database, and results are bounded + projected to the fields that
-// matter. Read-only by design — no tool mutates (that's Phase 3, with approvals).
+// Aurex tools. Read tools (Phase 2) are typed, RLS-scoped reads the model calls
+// to look things up itself. Write tools (Phase 3) NEVER mutate — they return a
+// ProposedAction the user must approve; only the explicit human Approve runs the
+// real mutation, through the normal spine (R-AI3). The model's raw input is never
+// trusted: every tool validates with Zod before it touches anything.
 
 export interface AgentTool {
   readonly spec: ToolSpec
+  /** Write tools return `{ proposal }` and never mutate; gated on this permission. */
+  readonly requiredPermission?: string
   run(ctx: WorkspaceContext, rawInput: unknown): Promise<unknown>
 }
 
@@ -226,15 +228,83 @@ const listProjects: AgentTool = {
   },
 }
 
-/** The Aurex agent toolset (read-only). */
-export const AGENT_TOOLS: readonly AgentTool[] = [listTasks, listDeals, listInvoices, listProjects]
+// ── create_task (write tool — proposes, never creates) ─────────────────────────
+// Canonical proposal args; re-validated at approval time before the real mutation.
+export const CreateTaskProposalArgs = z.object({
+  title: z.string().min(1).max(300),
+  description: z.string().max(4000).optional(),
+  priority: z.enum(TASK_PRIORITIES).optional(),
+  dueDate: z.string().nullable().optional(),
+  assignToMe: z.boolean().optional(),
+})
+export type CreateTaskProposalArgs = z.infer<typeof CreateTaskProposalArgs>
 
-const TOOL_BY_NAME = new Map(AGENT_TOOLS.map((t) => [t.spec.name, t]))
+const CreateTaskToolInput = z.object({
+  title: z.string().min(1).max(300),
+  description: z.string().max(4000).optional(),
+  priority: z.enum(TASK_PRIORITIES).optional(),
+  dueInDays: z.number().int().min(0).max(365).optional(),
+  assignToMe: z.boolean().optional(),
+})
 
-export function agentToolSpecs(): ToolSpec[] {
-  return AGENT_TOOLS.map((t) => t.spec)
+const createTaskTool: AgentTool = {
+  requiredPermission: 'tasks.task.create',
+  spec: {
+    name: 'create_task',
+    description:
+      'Propose creating a task. Provide title, and optionally description, priority (none/low/medium/high/urgent), dueInDays (0 = today, 1 = tomorrow …), and assignToMe. IMPORTANT: this does NOT create the task — it proposes it for the user to approve. After calling it, tell the user you have proposed the task and they can approve it.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        description: { type: 'string' },
+        priority: { type: 'string', enum: [...TASK_PRIORITIES] },
+        dueInDays: { type: 'number', description: '0 = today, 1 = tomorrow.' },
+        assignToMe: { type: 'boolean' },
+      },
+      required: ['title'],
+    },
+  },
+  async run(_ctx, raw) {
+    const p = CreateTaskToolInput.safeParse(raw)
+    if (!p.success) return { error: 'invalid input for create_task' }
+    const { title, description, priority, dueInDays, assignToMe } = p.data
+    const dueDate =
+      dueInDays === undefined
+        ? null
+        : new Date(Date.now() + dueInDays * 86_400_000).toISOString().slice(0, 10)
+    const args: CreateTaskProposalArgs = {
+      title,
+      ...(description ? { description } : {}),
+      ...(priority && priority !== 'none' ? { priority } : {}),
+      dueDate,
+      assignToMe: assignToMe ?? false,
+    }
+    const parts = [`Create a task “${title}”`]
+    if (priority && priority !== 'none') parts.push(`· ${priority} priority`)
+    if (dueDate) parts.push(`· due ${dueDate}`)
+    if (assignToMe) parts.push('· assigned to you')
+    const proposal: ProposedAction = { kind: 'create_task', summary: parts.join(' '), args }
+    return { proposal }
+  },
+}
+
+// ── Registry ───────────────────────────────────────────────────────────────────
+export const READ_TOOLS: readonly AgentTool[] = [listTasks, listDeals, listInvoices, listProjects]
+export const WRITE_TOOLS: readonly AgentTool[] = [createTaskTool]
+
+const ALL_TOOLS: readonly AgentTool[] = [...READ_TOOLS, ...WRITE_TOOLS]
+const TOOL_BY_NAME = new Map(ALL_TOOLS.map((t) => [t.spec.name, t]))
+
+export function readToolSpecs(): ToolSpec[] {
+  return READ_TOOLS.map((t) => t.spec)
 }
 
 export function agentTool(name: string): AgentTool | undefined {
   return TOOL_BY_NAME.get(name)
+}
+
+/** True when a tool's `run` returned a proposal instead of data. */
+export function isProposalResult(v: unknown): v is { proposal: ProposedAction } {
+  return typeof v === 'object' && v !== null && 'proposal' in v
 }

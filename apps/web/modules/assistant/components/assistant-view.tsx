@@ -1,16 +1,16 @@
 'use client'
 
 import * as React from 'react'
-import { ArrowUp, Sparkles } from 'lucide-react'
-import type { AssistantMessage } from '@aurexos/core'
+import { ArrowUp, Check, Sparkles, Wand2 } from 'lucide-react'
+import type { AssistantMessage, ProposedAction } from '@aurexos/core'
 import { AurexGlyph } from '@aurexos/ui/components/ai/aurex-mark'
 import { Button } from '@aurexos/ui/components/button'
 import { Card } from '@aurexos/ui/components/card'
-import { askAurex } from '../actions/assistant-actions'
+import { approveAurexAction, askAurex } from '../actions/assistant-actions'
 import type { AssistantContext } from '../queries/get-assistant-context'
 
-/** A chat entry — a message plus, for Aurex turns, which read tools it used. */
-type ChatItem = AssistantMessage & { toolsUsed?: string[] }
+/** A chat entry — a message, which read tools Aurex used, and any proposed actions. */
+type ChatItem = AssistantMessage & { toolsUsed?: string[]; proposals?: ProposedAction[] }
 
 const TOOL_LABELS: Record<string, string> = {
   list_tasks: 'tasks',
@@ -31,6 +31,75 @@ function AurexAvatar() {
   )
 }
 
+// An approval card — Aurex proposes; nothing happens until the user clicks Approve.
+function ProposalCard({ proposal }: { proposal: ProposedAction }) {
+  const [status, setStatus] = React.useState<'pending' | 'done' | 'dismissed' | 'error'>('pending')
+  const [note, setNote] = React.useState('')
+  const [isPending, startTransition] = React.useTransition()
+
+  const approve = () => {
+    startTransition(async () => {
+      const res = await approveAurexAction({ kind: proposal.kind, args: proposal.args })
+      if (!res.ok) {
+        setStatus('error')
+        setNote(res.error)
+        return
+      }
+      setStatus('done')
+      setNote(res.data.summary)
+    })
+  }
+
+  return (
+    <div className="mt-2.5 rounded-xl border bg-card p-3.5">
+      <div className="flex items-start gap-2.5">
+        <span
+          className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md bg-[hsl(var(--accent-soft))]"
+          style={{ color: 'hsl(var(--accent-text))' }}
+          aria-hidden="true"
+        >
+          <Wand2 className="size-3.5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Aurex proposes
+          </p>
+          <p className="text-sm text-foreground">{proposal.summary}</p>
+
+          {status === 'pending' ? (
+            <div className="mt-2.5 flex gap-2">
+              <Button size="sm" onClick={approve} disabled={isPending}>
+                {isPending ? 'Approving…' : 'Approve'}
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setStatus('dismissed')}
+                disabled={isPending}
+              >
+                Dismiss
+              </Button>
+            </div>
+          ) : status === 'done' ? (
+            <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-success">
+              <Check className="size-4" aria-hidden="true" /> {note}
+            </p>
+          ) : status === 'dismissed' ? (
+            <p className="mt-2 text-sm text-muted-foreground">Dismissed.</p>
+          ) : (
+            <div className="mt-2 space-y-1">
+              <p className="text-sm text-destructive">{note}</p>
+              <Button size="sm" variant="ghost" onClick={() => setStatus('pending')}>
+                Try again
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function MessageRow({ message }: { message: ChatItem }) {
   if (message.role === 'user') {
     return (
@@ -42,6 +111,7 @@ function MessageRow({ message }: { message: ChatItem }) {
     )
   }
   const tools = message.toolsUsed ?? []
+  const proposals = message.proposals ?? []
   return (
     <div className="flex gap-2.5">
       <AurexAvatar />
@@ -54,6 +124,9 @@ function MessageRow({ message }: { message: ChatItem }) {
         <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">
           {message.content}
         </p>
+        {proposals.map((p, i) => (
+          <ProposalCard key={i} proposal={p} />
+        ))}
       </div>
     </div>
   )
@@ -105,7 +178,12 @@ export function AssistantView({ context }: { context: AssistantContext }) {
       }
       setMessages((m) => [
         ...m,
-        { role: 'assistant', content: res.data.reply, toolsUsed: res.data.toolsUsed },
+        {
+          role: 'assistant',
+          content: res.data.reply,
+          toolsUsed: res.data.toolsUsed,
+          proposals: res.data.proposals,
+        },
       ])
     })
   }

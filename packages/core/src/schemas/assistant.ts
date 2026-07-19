@@ -15,3 +15,20 @@ export const AskAurexInput = z.object({
   messages: z.array(AssistantMessageSchema).min(1).max(40),
 })
 export type AskAurexInput = z.infer<typeof AskAurexInput>
+
+// A write action Aurex proposes but does NOT perform (R-AI3). It surfaces as an
+// approval card; only an explicit human Approve executes it, through the real
+// mutation spine. `args` are validated again, per-kind, at execution time.
+export const ProposedActionSchema = z.object({
+  kind: z.string().min(1),
+  summary: z.string().min(1),
+  args: z.record(z.unknown()),
+})
+export type ProposedAction = z.infer<typeof ProposedActionSchema>
+
+/** What the approval card sends back to run the proposed action. */
+export const ApproveAurexInput = z.object({
+  kind: z.string().min(1),
+  args: z.record(z.unknown()),
+})
+export type ApproveAurexInput = z.infer<typeof ApproveAurexInput>

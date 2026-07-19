@@ -91,6 +91,7 @@ export type { AurexSystemFrameVariables } from './prompts/aurex-system-frame'
 export {
   aurexAssistantV1,
   aurexAssistantV2,
+  aurexAssistantV3,
   aurexAssistantVariablesSchema,
 } from './prompts/aurex-assistant'
 export type { AurexAssistantVariables } from './prompts/aurex-assistant'
