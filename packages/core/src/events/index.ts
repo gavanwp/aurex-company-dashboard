@@ -6,6 +6,7 @@ export const DOMAIN_EVENTS = [
   'workspace.member.invited',
   'workspace.member.removed',
   'workspace.member.role_changed',
+  'workspace.member.profile_updated',
   'projects.project.created',
   'projects.project.updated',
   'projects.project.deleted',

@@ -21,6 +21,7 @@ import {
   ScrollText,
   Search,
   Settings,
+  UserRound,
   Users,
   Video,
   Workflow,
@@ -253,11 +254,35 @@ export function AppShell({ workspace, profile, role, notifications, children }: 
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link
-                  href="/settings"
-                  aria-current={isActive(pathname, '/settings') ? 'page' : undefined}
+                  href="/settings/profile"
+                  aria-current={isActive(pathname, '/settings/profile') ? 'page' : undefined}
                   className={cn(
                     'relative flex h-8 items-center gap-2.5 rounded-md px-2.5 text-sm font-medium transition-colors',
-                    isActive(pathname, '/settings') ? activeStyles : inactiveStyles,
+                    isActive(pathname, '/settings/profile') ? activeStyles : inactiveStyles,
+                  )}
+                >
+                  <UserRound className="size-5 shrink-0" aria-hidden="true" />
+                  <span className={cn('truncate', labelClass)}>Profile</span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right" className={cn(!collapsed && 'md:hidden')}>
+                Profile
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href="/settings"
+                  aria-current={
+                    isActive(pathname, '/settings') && !isActive(pathname, '/settings/profile')
+                      ? 'page'
+                      : undefined
+                  }
+                  className={cn(
+                    'relative flex h-8 items-center gap-2.5 rounded-md px-2.5 text-sm font-medium transition-colors',
+                    isActive(pathname, '/settings') && !isActive(pathname, '/settings/profile')
+                      ? activeStyles
+                      : inactiveStyles,
                   )}
                 >
                   <Settings className="size-5 shrink-0" aria-hidden="true" />

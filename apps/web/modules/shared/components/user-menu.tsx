@@ -1,8 +1,9 @@
 'use client'
 
 import { useTransition } from 'react'
+import Link from 'next/link'
 import { useTheme } from 'next-themes'
-import { ChevronsUpDown, LogOut, Monitor, Moon, Sun, SunMoon } from 'lucide-react'
+import { ChevronsUpDown, LogOut, Monitor, Moon, Sun, SunMoon, UserRound } from 'lucide-react'
 import { initialsOf, type WorkspaceRole } from '@aurexos/core'
 import { cn } from '@aurexos/ui/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@aurexos/ui/components/avatar'
@@ -100,6 +101,14 @@ export function UserMenu({
             {profile.email} · {role.replace(/_/g, ' ')}
           </span>
         </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem asChild>
+          <Link href="/settings/profile">
+            <UserRound className="mr-2 size-4" aria-hidden="true" />
+            Profile
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
 
         <DropdownMenuSub>

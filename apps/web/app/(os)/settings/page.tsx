@@ -5,6 +5,7 @@ import {
   KeyRound,
   MonitorSmartphone,
   ShieldCheck,
+  UserRound,
   Users,
   type LucideIcon,
 } from 'lucide-react'
@@ -60,6 +61,12 @@ export default async function SettingsPage() {
       <PageHeader title="Settings" description="Workspace, members, and security." />
       <WorkspaceSettings ctx={ctx} />
       <div className="space-y-3">
+        <SettingLink
+          href="/settings/profile"
+          icon={UserRound}
+          title="Profile"
+          description="Your personal details, preferences, and activity"
+        />
         {showAccess ? (
           <SettingLink
             href="/settings/people"
