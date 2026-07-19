@@ -1,7 +1,13 @@
 import 'server-only'
 
 import { z } from 'zod'
-import { formatMoney, TASK_PRIORITIES, type ProposedAction } from '@aurexos/core'
+import {
+  DEAL_STAGES,
+  formatMoney,
+  TASK_PRIORITIES,
+  TASK_STATUSES,
+  type ProposedAction,
+} from '@aurexos/core'
 import type { ToolSpec } from '@aurexos/ai'
 import type { WorkspaceContext } from '@/lib/workspace-context'
 
@@ -56,7 +62,7 @@ const listTasks: AgentTool = {
     const { assignedToMe, status = 'open', limit } = p.data
     let q = ctx.supabase
       .from('tasks')
-      .select('title, status, priority, due_date, assignee_id')
+      .select('id, title, status, priority, due_date, assignee_id')
       .eq('workspace_id', ctx.workspace.id)
       .is('deleted_at', null)
       .order('due_date', { ascending: true, nullsFirst: false })
@@ -69,7 +75,9 @@ const listTasks: AgentTool = {
     if (error) return { error: 'could not list tasks' }
     return {
       count: data?.length ?? 0,
+      // id is included so change_task_status can reference a specific task.
       tasks: (data ?? []).map((t) => ({
+        id: t.id,
         title: t.title,
         status: t.status,
         priority: t.priority,
@@ -289,9 +297,152 @@ const createTaskTool: AgentTool = {
   },
 }
 
+// ── change_task_status (write) ─────────────────────────────────────────────────
+export const ChangeTaskStatusArgs = z.object({
+  id: z.string().uuid(),
+  status: z.enum(TASK_STATUSES),
+})
+export type ChangeTaskStatusArgs = z.infer<typeof ChangeTaskStatusArgs>
+
+const ChangeTaskStatusToolInput = z.object({
+  taskId: z.string().uuid(),
+  status: z.enum(TASK_STATUSES),
+  taskTitle: z.string().max(300).optional(),
+})
+
+const changeTaskStatusTool: AgentTool = {
+  requiredPermission: 'tasks.task.edit',
+  spec: {
+    name: 'change_task_status',
+    description:
+      'Propose changing a task’s status. Call list_tasks first to get the taskId. status: backlog, todo, in_progress, in_review, done, canceled. Pass taskTitle so the user sees which task. Proposes for approval — changes nothing itself.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        taskId: { type: 'string' },
+        status: { type: 'string', enum: [...TASK_STATUSES] },
+        taskTitle: { type: 'string' },
+      },
+      required: ['taskId', 'status'],
+    },
+  },
+  async run(_ctx, raw) {
+    const p = ChangeTaskStatusToolInput.safeParse(raw)
+    if (!p.success) return { error: 'invalid input for change_task_status' }
+    const label = p.data.status.replace(/_/g, ' ')
+    const which = p.data.taskTitle ? `“${p.data.taskTitle}”` : 'a task'
+    const proposal: ProposedAction = {
+      kind: 'change_task_status',
+      summary: `Set ${which} to ${label}`,
+      args: { id: p.data.taskId, status: p.data.status },
+    }
+    return { proposal }
+  },
+}
+
+// ── create_contact (write) ─────────────────────────────────────────────────────
+export const CreateContactArgs = z.object({
+  fullName: z.string().min(1).max(160),
+  email: z.string().email().optional(),
+  phone: z.string().max(40).optional(),
+  title: z.string().max(120).optional(),
+})
+export type CreateContactArgs = z.infer<typeof CreateContactArgs>
+
+const createContactTool: AgentTool = {
+  requiredPermission: 'crm.crm.edit',
+  spec: {
+    name: 'create_contact',
+    description:
+      'Propose adding a CRM contact (a person). Provide fullName, and optionally email, phone, and title/role. Proposes for approval — does not create anything itself.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        fullName: { type: 'string' },
+        email: { type: 'string' },
+        phone: { type: 'string' },
+        title: { type: 'string' },
+      },
+      required: ['fullName'],
+    },
+  },
+  async run(_ctx, raw) {
+    const p = CreateContactArgs.safeParse(raw)
+    if (!p.success) return { error: 'invalid input for create_contact' }
+    const extra = p.data.title ? ` (${p.data.title})` : ''
+    const proposal: ProposedAction = {
+      kind: 'create_contact',
+      summary: `Add contact ${p.data.fullName}${extra}`,
+      args: p.data,
+    }
+    return { proposal }
+  },
+}
+
+// ── create_deal (write) ────────────────────────────────────────────────────────
+export const CreateDealArgs = z.object({
+  title: z.string().min(1).max(200),
+  stage: z.enum(DEAL_STAGES).optional(),
+  valueCents: z.number().int().nonnegative().nullable().optional(),
+  currency: z.string().length(3).optional(),
+  expectedCloseDate: z.string().nullable().optional(),
+})
+export type CreateDealArgs = z.infer<typeof CreateDealArgs>
+
+const CreateDealToolInput = z.object({
+  title: z.string().min(1).max(200),
+  stage: z.enum(DEAL_STAGES).optional(),
+  value: z.number().nonnegative().optional(),
+  currency: z.string().length(3).optional(),
+  expectedCloseDate: z.string().optional(),
+})
+
+const createDealTool: AgentTool = {
+  requiredPermission: 'crm.crm.edit',
+  spec: {
+    name: 'create_deal',
+    description:
+      'Propose adding a deal to the pipeline. Provide title; optionally stage (lead, qualified, proposal, negotiation, won, lost), value (a number in the main currency unit, e.g. dollars), currency (3-letter), and expectedCloseDate (YYYY-MM-DD). Proposes for approval.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        stage: { type: 'string', enum: [...DEAL_STAGES] },
+        value: { type: 'number', description: 'Amount in the main currency unit (e.g. dollars).' },
+        currency: { type: 'string', description: '3-letter code, default USD.' },
+        expectedCloseDate: { type: 'string', description: 'YYYY-MM-DD.' },
+      },
+      required: ['title'],
+    },
+  },
+  async run(_ctx, raw) {
+    const p = CreateDealToolInput.safeParse(raw)
+    if (!p.success) return { error: 'invalid input for create_deal' }
+    const { title, stage, value, currency = 'USD', expectedCloseDate } = p.data
+    const valueCents = value === undefined ? null : Math.round(value * 100)
+    const args: CreateDealArgs = {
+      title,
+      ...(stage ? { stage } : {}),
+      valueCents,
+      currency,
+      expectedCloseDate: expectedCloseDate ?? null,
+    }
+    const parts = [`Add deal “${title}”`]
+    if (stage) parts.push(`· ${stage}`)
+    if (valueCents !== null) parts.push(`· ${formatMoney(valueCents, currency)}`)
+    const proposal: ProposedAction = { kind: 'create_deal', summary: parts.join(' '), args }
+    return { proposal }
+  },
+}
+
 // ── Registry ───────────────────────────────────────────────────────────────────
 export const READ_TOOLS: readonly AgentTool[] = [listTasks, listDeals, listInvoices, listProjects]
-export const WRITE_TOOLS: readonly AgentTool[] = [createTaskTool]
+export const WRITE_TOOLS: readonly AgentTool[] = [
+  createTaskTool,
+  changeTaskStatusTool,
+  createContactTool,
+  createDealTool,
+]
 
 const ALL_TOOLS: readonly AgentTool[] = [...READ_TOOLS, ...WRITE_TOOLS]
 const TOOL_BY_NAME = new Map(ALL_TOOLS.map((t) => [t.spec.name, t]))

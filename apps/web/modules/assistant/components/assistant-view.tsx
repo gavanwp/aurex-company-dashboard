@@ -110,16 +110,15 @@ function MessageRow({ message }: { message: ChatItem }) {
       </div>
     )
   }
-  const tools = message.toolsUsed ?? []
+  // Only read tools carry a label; write tools surface as approval cards below.
+  const lookedUp = (message.toolsUsed ?? []).map((t) => TOOL_LABELS[t]).filter(Boolean)
   const proposals = message.proposals ?? []
   return (
     <div className="flex gap-2.5">
       <AurexAvatar />
       <div className="min-w-0 flex-1 pt-0.5">
-        {tools.length > 0 ? (
-          <p className="mb-1 text-xs text-muted-foreground">
-            Looked up {tools.map((t) => TOOL_LABELS[t] ?? t).join(', ')}
-          </p>
+        {lookedUp.length > 0 ? (
+          <p className="mb-1 text-xs text-muted-foreground">Looked up {lookedUp.join(', ')}</p>
         ) : null}
         <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">
           {message.content}

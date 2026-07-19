@@ -8,10 +8,14 @@ import { buildWorkspaceGateway } from '@/lib/ai/gateway'
 import { isAiConfigured } from '@/lib/env'
 import { hasPermission, requirePermission } from '@/lib/permissions'
 import { getWorkspaceContext } from '@/lib/workspace-context'
-import { createTask } from '@/modules/tasks'
+import { changeTaskStatus, createTask } from '@/modules/tasks'
+import { createContact, createDeal } from '@/modules/crm'
 import { getAssistantContext } from '../queries/get-assistant-context'
 import {
   agentTool,
+  ChangeTaskStatusArgs,
+  CreateContactArgs,
+  CreateDealArgs,
   CreateTaskProposalArgs,
   isProposalResult,
   readToolSpecs,
@@ -211,6 +215,42 @@ export async function approveAurexAction(
       if (!res.ok) return { ok: false, error: res.error }
       return { ok: true, data: { summary: `Created “${a.data.title}”` } }
     }
+
+    if (parsed.data.kind === 'change_task_status') {
+      const a = ChangeTaskStatusArgs.safeParse(parsed.data.args)
+      if (!a.success) return { ok: false, error: 'The status change couldn’t be validated.' }
+      const res = await changeTaskStatus({ id: a.data.id, status: a.data.status })
+      if (!res.ok) return { ok: false, error: res.error }
+      return { ok: true, data: { summary: `Task set to ${a.data.status.replace(/_/g, ' ')}` } }
+    }
+
+    if (parsed.data.kind === 'create_contact') {
+      const a = CreateContactArgs.safeParse(parsed.data.args)
+      if (!a.success) return { ok: false, error: 'The contact details couldn’t be validated.' }
+      const res = await createContact({
+        fullName: a.data.fullName,
+        email: a.data.email,
+        phone: a.data.phone,
+        title: a.data.title,
+      })
+      if (!res.ok) return { ok: false, error: res.error }
+      return { ok: true, data: { summary: `Added contact ${a.data.fullName}` } }
+    }
+
+    if (parsed.data.kind === 'create_deal') {
+      const a = CreateDealArgs.safeParse(parsed.data.args)
+      if (!a.success) return { ok: false, error: 'The deal details couldn’t be validated.' }
+      const res = await createDeal({
+        title: a.data.title,
+        stage: a.data.stage,
+        valueCents: a.data.valueCents ?? null,
+        currency: a.data.currency,
+        expectedCloseDate: a.data.expectedCloseDate ?? null,
+      })
+      if (!res.ok) return { ok: false, error: res.error }
+      return { ok: true, data: { summary: `Added deal “${a.data.title}”` } }
+    }
+
     return { ok: false, error: 'That action can’t be approved.' }
   } catch {
     return { ok: false, error: 'Could not complete the action.' }
