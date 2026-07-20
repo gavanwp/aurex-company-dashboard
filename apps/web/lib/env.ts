@@ -95,7 +95,7 @@ export function isGmailConfigured(): boolean {
  */
 export function isAiConfigured(): boolean {
   const env = getEnv()
-  return !!(env.ANTHROPIC_API_KEY || env.OPENAI_API_KEY)
+  return !!(env.ANTHROPIC_API_KEY || env.OPENAI_API_KEY || env.GEMINI_API_KEY)
 }
 
 /**
