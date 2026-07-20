@@ -4,8 +4,8 @@ import { createHash, randomBytes } from 'node:crypto'
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { emitDomainEvent, writeAudit, type ActionResult } from '@/lib/action-kit'
-import { requirePermission } from '@/lib/permissions'
-import { getWorkspaceContext } from '@/lib/workspace-context'
+import { getEffectivePermissions, requirePermission } from '@/lib/permissions'
+import { getWorkspaceContext, type WorkspaceContext } from '@/lib/workspace-context'
 
 // People & Access mutations. Engine-guarded (users.user.invite); every change is
 // audited. Invitations create a hashed-token row — email delivery is a follow-up
@@ -20,6 +20,39 @@ function revalidateAccess(): void {
   revalidatePath('/settings/people')
 }
 
+/**
+ * Anti-escalation guard for role delegation (SEC C2/H3). A caller may only grant
+ * a role that (a) is an assignable workspace/portal system role — never an
+ * organization- or platform-scoped role such as organization_owner/super_admin —
+ * and (b) whose permission set is a SUBSET of the caller's own effective
+ * permissions, so delegation can never escalate privilege above the granter.
+ * NOTE: a direct PostgREST insert bypasses this, so the authoritative backstop
+ * lives in the accept_invitation SECURITY DEFINER function; enforcing here gives
+ * correct UX and defense in depth. Returns the role key, or an error to surface.
+ */
+async function assertAssignableRole(
+  ctx: WorkspaceContext,
+  roleId: string,
+): Promise<{ ok: true; key: string } | { ok: false; error: string }> {
+  const { data: role } = await ctx.supabase
+    .from('roles')
+    .select('key, scope, is_system')
+    .eq('id', roleId)
+    .maybeSingle()
+  if (!role || !role.is_system || (role.scope !== 'workspace' && role.scope !== 'portal')) {
+    return { ok: false, error: 'That role can’t be assigned here' }
+  }
+  const [targetGrants, callerPerms] = await Promise.all([
+    ctx.supabase.from('role_permissions').select('permission_key').eq('role_id', roleId),
+    getEffectivePermissions(ctx),
+  ])
+  const escalates = (targetGrants.data ?? []).some((g) => !callerPerms.has(g.permission_key))
+  if (escalates) {
+    return { ok: false, error: 'You can’t grant a role with more access than your own' }
+  }
+  return { ok: true, key: role.key }
+}
+
 export async function inviteUser(
   input: z.input<typeof InviteInput>,
 ): Promise<ActionResult<{ id: string; token: string }>> {
@@ -32,13 +65,10 @@ export async function inviteUser(
     await requirePermission(ctx, 'users.user.invite')
     const { email, roleId } = parsed.data
 
-    // The role must be a real system/org role.
-    const { data: role } = await ctx.supabase
-      .from('roles')
-      .select('id')
-      .eq('id', roleId)
-      .maybeSingle()
-    if (!role) return { ok: false, error: 'Unknown role' }
+    // SEC C2/H3: the role must be assignable and must not escalate privilege
+    // above the inviter (previously only checked the role existed).
+    const assignable = await assertAssignableRole(ctx, roleId)
+    if (!assignable.ok) return { ok: false, error: assignable.error }
 
     // Random token → stored as a hash; the plaintext would go in the email link.
     const token = randomBytes(24).toString('hex')
@@ -139,17 +169,11 @@ export async function changeMemberRole(
       return { ok: false, error: 'The workspace owner’s role is changed via ownership transfer' }
     }
 
-    // The target must be a real, assignable system role (workspace/portal scope).
-    const { data: role } = await ctx.supabase
-      .from('roles')
-      .select('key, scope, is_system')
-      .eq('id', roleId)
-      .maybeSingle()
-    if (!role || !role.is_system || (role.scope !== 'workspace' && role.scope !== 'portal')) {
-      return { ok: false, error: 'That role can’t be assigned here' }
-    }
+    // SEC C2/H3: assignable workspace/portal role that doesn't escalate privilege.
+    const assignable = await assertAssignableRole(ctx, roleId)
+    if (!assignable.ok) return { ok: false, error: assignable.error }
 
-    const legacy = (LEGACY_ROLE[role.key] ?? 'member') as never
+    const legacy = (LEGACY_ROLE[assignable.key] ?? 'member') as never
     const { error } = await ctx.supabase
       .from('workspace_members')
       .update({ role_id: roleId, role: legacy })
@@ -161,14 +185,14 @@ export async function changeMemberRole(
       eventType: 'workspace.member.role_changed',
       entityType: 'workspace_member',
       entityId: userId,
-      payload: { roleId, roleKey: role.key },
+      payload: { roleId, roleKey: assignable.key },
     })
     await writeAudit(ctx, {
       action: 'workspace.member.role_changed',
       entityType: 'workspace_member',
       entityId: userId,
       before: { roleId: member.role_id },
-      after: { roleId, roleKey: role.key },
+      after: { roleId, roleKey: assignable.key },
     })
     revalidateAccess()
     return { ok: true, data: { userId } }
