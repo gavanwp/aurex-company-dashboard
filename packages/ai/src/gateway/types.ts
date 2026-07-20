@@ -27,6 +27,15 @@ export const ToolCallSchema = z.object({
   id: z.string(),
   name: z.string(),
   input: z.record(z.unknown()),
+  /**
+   * Opaque provider signature that MUST be replayed on the next turn's
+   * assistant message. Gemini 3 "thinking" models emit a `thoughtSignature`
+   * per function call and reject the follow-up turn with 400 if it is dropped
+   * (ai.google.dev/gemini-api/docs/thought-signatures). Only the Gemini adapter
+   * sets and consumes this; other providers ignore it. Mirrors the existing
+   * `toolCallId` / `toolName` provider-correlation precedent on ChatMessage.
+   */
+  thoughtSignature: z.string().optional(),
 })
 export type ToolCall = z.infer<typeof ToolCallSchema>
 

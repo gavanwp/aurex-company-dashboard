@@ -43,17 +43,25 @@ callback `https://workspace.aurexdesigns.com/api/integrations/gmail/callback` is
   - Prompts `aurexAssistantV1/V2/V3` in `packages/ai`. Shared `apps/web/lib/ai/gateway-errors.ts`
     surfaces a clear "out of AI credits" message on the provider billing 400.
 
-**IN PROGRESS — switch Aurex to Google Gemini's FREE tier** (the Anthropic account has $0 credits;
-the user wants free). Done + deployed: `isAiConfigured()` recognizes `GEMINI_API_KEY`; `getAiEnv()`
-forwards `GEMINI_API_KEY` + `AI_TIER_*`; the gateway has a Gemini adapter with tool-calling; tiers are
-overridable via `AI_TIER_<TIER>=provider:modelId`. Already appended to `apps/web/.env.local`:
-`AI_TIER_STANDARD/FRONTIER/LIGHT=gemini:gemini-2.0-flash`. **Waiting on** the user to add
-`GEMINI_API_KEY=AIza…` (free key from aistudio.google.com/apikey) to `apps/web/.env.local` (they kept
-saving it elsewhere — confirm it's in THAT file; grep the var NAME only). Then: smoke-test the key +
-model with `@google/generative-ai` (resolve from `packages/ai`) incl. a `functionDeclarations` tool;
-run the agent loop; **tune Gemini function-calling** in `packages/ai/src/gateway/providers/gemini.ts`
-if the tool round-trip misbehaves (try `gemini-1.5-flash` if `gemini-2.0-flash` is invalid). Finally
-add `GEMINI_API_KEY` + the three `AI_TIER_*` to Vercel and redeploy for the live site.
+**DONE — Aurex runs on Google Gemini's FREE tier** (the Anthropic account has $0 credits; the user
+wants free). `isAiConfigured()` recognizes `GEMINI_API_KEY`; `getAiEnv()` forwards `GEMINI_API_KEY` +
+`AI_TIER_*`; the gateway Gemini adapter does tool-calling; tiers are overridable via
+`AI_TIER_<TIER>=provider:modelId`. Smoke-tested the full agent loop end-to-end (real gateway → router →
+GeminiAdapter, live free key): turn 1 returns a `list_tasks` tool call, turn 2 answers correctly.
+
+- **Model = `gemini-flash-latest`** (all three tiers). `gemini-2.0-flash` has free-tier **quota 0** on
+  the key's project and `gemini-2.5-flash` 404s on `generateContent`; only the `gemini-flash-latest` /
+  `gemini-flash-lite-latest` aliases have quota AND tool-calling. `apps/web/.env.local` now routes
+  `AI_TIER_STANDARD/FRONTIER/LIGHT=gemini:gemini-flash-latest`.
+- **Gemini 3 thought-signature quirk (fixed in `packages/ai/src/gateway/providers/gemini.ts`).**
+  `gemini-flash-latest` resolves to a Gemini 3 _thinking_ model: it emits a `thoughtSignature` per
+  function call and 400s the follow-up turn if the signature isn't replayed. Added optional
+  `thoughtSignature` to `ToolCall` (`types.ts`); `extractToolCalls` captures it from the raw parts and
+  `toGeminiContents` replays it on the assistant turn. The agent loop already passes `response.toolCalls`
+  back verbatim, so it round-trips with no app-layer change. (Streaming `tool_call_delta` does NOT carry
+  the signature yet — Aurex uses the non-streaming `complete()` path; wire it in before streaming tools.)
+- **Vercel:** `GEMINI_API_KEY` + the three `AI_TIER_*` (=`gemini:gemini-flash-latest`) are set on
+  Production and redeployed; the fix ships with the `main` push in this commit.
 
 **Parked / backlog:**
 

@@ -92,6 +92,10 @@ export class GeminiAdapter implements ProviderAdapter {
         }
         // Gemini streams function calls whole, not as JSON fragments — each
         // arrives as a single complete tool_call_delta.
+        // NOTE: tool_call_delta carries no thoughtSignature, so streamed
+        // multi-turn tool loops can't replay it (Gemini 3 requirement). The
+        // Aurex agent loop uses the non-streaming complete() path, which does
+        // replay it; wire the signature into StreamDelta before streaming tools.
         for (const call of chunk.functionCalls() ?? []) {
           yield {
             type: 'tool_call_delta',
@@ -199,7 +203,14 @@ function toGeminiContents(messages: ChatMessage[]): Content[] {
       const parts: Part[] = []
       if (message.content.length > 0) parts.push({ text: message.content })
       for (const call of message.toolCalls ?? []) {
-        parts.push({ functionCall: { name: call.name, args: call.input } })
+        const part: Part = { functionCall: { name: call.name, args: call.input } }
+        // Replay the thought signature from the turn that produced this call —
+        // Gemini 3 thinking models 400 the follow-up without it. Attached as an
+        // extra field the SDK (v0.21, pre-Gemini-3 types) forwards verbatim.
+        if (call.thoughtSignature !== undefined) {
+          ;(part as { thoughtSignature?: string }).thoughtSignature = call.thoughtSignature
+        }
+        parts.push(part)
       }
       contents.push({ role: 'model', parts: parts.length > 0 ? parts : [{ text: '' }] })
     } else {
@@ -247,12 +258,24 @@ function extractText(response: EnhancedGenerateContentResponse): string {
 }
 
 function extractToolCalls(response: EnhancedGenerateContentResponse): ToolCall[] {
-  const calls = response.functionCalls() ?? []
-  return calls.map((call, index) => ({
-    id: `gemini-call-${index}`, // Caveat 2 above: Gemini has no native call ids
-    name: call.name,
-    input: isRecord(call.args) ? call.args : {},
-  }))
+  // Walk the raw parts rather than response.functionCalls(): the helper drops
+  // the sibling `thoughtSignature`, which Gemini 3 thinking models require us
+  // to replay on the next turn (see toGeminiContents; docs: thought-signatures).
+  const parts = response.candidates?.[0]?.content?.parts ?? []
+  const calls: ToolCall[] = []
+  for (const part of parts) {
+    const functionCall = (part as { functionCall?: { name: string; args?: unknown } }).functionCall
+    if (functionCall === undefined) continue
+    const call: ToolCall = {
+      id: `gemini-call-${calls.length}`, // Caveat 2 above: Gemini has no native call ids
+      name: functionCall.name,
+      input: isRecord(functionCall.args) ? functionCall.args : {},
+    }
+    const signature = (part as { thoughtSignature?: unknown }).thoughtSignature
+    if (typeof signature === 'string' && signature.length > 0) call.thoughtSignature = signature
+    calls.push(call)
+  }
+  return calls
 }
 
 function toUsage(metadata: UsageMetadata | undefined): TokenUsage {
