@@ -2,7 +2,85 @@
 
 > **Read this first in any new session.** It is the fast-orientation snapshot of where the build is, how to run it, the binding rules, and the environment quirks. It complements (does not replace) the planning docs `01–15`, `architecture/`, and `design/`, which remain the source of truth.
 
-_Last updated: 2026-07-15._
+_Last updated: 2026-07-19._
+
+---
+
+## 0. Latest session (2026-07-19) — deployment + AI Assistant + free-AI switch
+
+**AurexOS is LIVE in production.** Deployed on **Vercel** (project `aurex-company-dashboard-web`,
+account `wpgavan-gmailcoms-projects`, Hobby) from GitHub `gavanwp/aurex-company-dashboard`. Root
+Directory `apps/web`, framework Next.js, **production branch = `main`** (pushing `main` auto-deploys;
+`main` and the working branch are both at the latest commit). Live at
+**https://aurex-company-dashboard-web.vercel.app** and the custom domain
+**https://workspace.aurexdesigns.com** (Hostinger DNS: CNAME `workspace` → `cname.vercel-dns.com`;
+SSL issued). Vercel env vars set: `NEXT_PUBLIC_SUPABASE_URL/ANON_KEY`, `NEXT_PUBLIC_APP_URL` (= custom
+domain), `MAILBOX_TOKEN_KEY`, `GOOGLE_CLIENT_ID/SECRET`, `ANTHROPIC_API_KEY`. Gmail OAuth works (the
+callback `https://workspace.aurexdesigns.com/api/integrations/gmail/callback` is in the Google Console).
+
+**Shipped this session (all committed to `main`, deployed):**
+
+- **Documents DMS foundation** (migration `0024`): `document_folders/document_files/`
+  `document_file_versions/document_tags/document_tag_assignments` + granular permissions + 10 domain
+  events + read models + 10 server actions on the mutation spine (`modules/documents`). No UI yet;
+  file upload/download needs `SUPABASE_SERVICE_ROLE_KEY` + a private bucket (not provisioned).
+- **Profile page** `/settings/profile` (migration `0025` added `profiles.title/timezone/location`):
+  real `updateProfile` (emits `workspace.member.profile_updated`), live stat tiles, recent activity,
+  a `next-themes` theme control; linked from the sidebar + avatar menu (`modules/settings`).
+- **Responsive + perf pass**: `app-shell` mobile nav drawer (Sheet) below `md` + a hamburger; global
+  `body` overflow-x guard; prod `console.*` strip (`next.config.ts`); Email center mobile
+  master-detail. Verified live via viewport resize (no horizontal overflow at 375px).
+- **AI Assistant "Aurex"** — the Phase-3 flagship, at **`/assistant`** (sidebar item now live):
+  - **P1** context-grounded chat — `getAssistantContext` builds a live RLS-scoped workspace snapshot
+    (my open/overdue tasks, active projects, team, open pipeline value, outstanding AR).
+  - **P2** read-tools agent — `modules/assistant/lib/tools.ts`: `list_tasks/list_deals/list_invoices/`
+    `list_projects` (typed, Zod-validated, RLS-scoped, bounded). `askAurex` runs a bounded agent loop
+    (max 4 tool rounds); gateway meters every call.
+  - **P3** write tools + **approval cards** (R-AI3): `create_task/change_task_status/create_contact/`
+    `create_deal`. Write tools only PROPOSE (`ProposedAction`); the user clicks **Approve** →
+    `approveAurexAction` runs the module's REAL mutation (`createTask/changeTaskStatus/createContact/`
+    `createDeal`). Each write tool is permission-gated so Aurex never offers what the caller can't do.
+  - Prompts `aurexAssistantV1/V2/V3` in `packages/ai`. Shared `apps/web/lib/ai/gateway-errors.ts`
+    surfaces a clear "out of AI credits" message on the provider billing 400.
+
+**IN PROGRESS — switch Aurex to Google Gemini's FREE tier** (the Anthropic account has $0 credits;
+the user wants free). Done + deployed: `isAiConfigured()` recognizes `GEMINI_API_KEY`; `getAiEnv()`
+forwards `GEMINI_API_KEY` + `AI_TIER_*`; the gateway has a Gemini adapter with tool-calling; tiers are
+overridable via `AI_TIER_<TIER>=provider:modelId`. Already appended to `apps/web/.env.local`:
+`AI_TIER_STANDARD/FRONTIER/LIGHT=gemini:gemini-2.0-flash`. **Waiting on** the user to add
+`GEMINI_API_KEY=AIza…` (free key from aistudio.google.com/apikey) to `apps/web/.env.local` (they kept
+saving it elsewhere — confirm it's in THAT file; grep the var NAME only). Then: smoke-test the key +
+model with `@google/generative-ai` (resolve from `packages/ai`) incl. a `functionDeclarations` tool;
+run the agent loop; **tune Gemini function-calling** in `packages/ai/src/gateway/providers/gemini.ts`
+if the tool round-trip misbehaves (try `gemini-1.5-flash` if `gemini-2.0-flash` is invalid). Finally
+add `GEMINI_API_KEY` + the three `AI_TIER_*` to Vercel and redeploy for the live site.
+
+**Parked / backlog:**
+
+- **`git stash@{0}`** — "custom-roles editor (RBAC increment 1)", code-complete (tsc/lint/build green)
+  but migration `0023` RLS was never verified. `git stash pop` to resume; verify `0023` + commit.
+- **Overdue-task automation** ("task not completed by date → notify") — user put ON HOLD; needs a
+  Vercel Cron + `SUPABASE_SERVICE_ROLE_KEY` (scheduled cross-tenant scan).
+- **Documents** — UI (P4) + upload/download need `SUPABASE_SERVICE_ROLE_KEY` + a private bucket.
+- **Aurex next** — more write tools (log CRM activity, move deal stage, draft email); Phase 4 = RAG
+  (pgvector) over docs/history.
+
+**Gotchas learned this session (important):**
+
+- **Migrations were landing on the WRONG Supabase project** — the seed uses fixed IDs (workspace
+  `…aa01 AurexDesigns`) so every seeded DB looks identical. ALWAYS confirm the target with
+  `node scripts/whoami-db.mjs` (`matchesApp=true` ⇒ ref == `tcwkxxfbzupotzoneoht`). After raw-SQL DDL,
+  PostgREST's schema cache is stale (PGRST205 / column `does not exist` 42703) until reloaded via
+  `node scripts/reload-schema.mjs` or a Supabase **project restart**. `0024`/`0025` ARE on Mumbai now.
+- **Never type/paste API keys/tokens/secrets into fields** — the user pastes those; only non-secret
+  config (URLs, `AI_TIER_*`) may be typed.
+- **Browser tool** drives `vercel.com` but BLOCKS `github.com`/`supabase.com`/`hostinger.com`/
+  `*.vercel.app` app domains → those steps are the user's. The user's Chrome sometimes has the WRONG
+  Vercel account (`sknmcat2018`) → 404 on the project; it must be the `wpgavan` account.
+- Anthropic **API** credits are separate from any **claude.ai** subscription, and from other orgs — a
+  key only works if its own org has a positive prepaid balance.
+- New diagnostic scripts committed: `scripts/whoami-db.mjs`, `scripts/reload-schema.mjs`,
+  `scripts/diag-0023.mjs`. See also `DEPLOY.md`.
 
 ---
 
