@@ -37,6 +37,27 @@ function forbiddenOr(err: unknown): ActionResult<never> {
   }
 }
 
+/**
+ * SEC H4: reject a stored-object reference that isn't under THIS workspace's key
+ * prefix. Object keys are workspace-UUID-prefixed by buildObjectKey
+ * (`{workspaceId}/module/entity/...`), so a `files.object_key` that doesn't start
+ * with the caller's workspace id — or that tries to traverse — is a cross-tenant
+ * reference. Persisting it would let the signed-download provider (service-role,
+ * bypasses storage RLS) later sign another tenant's object. The client supplies
+ * this value on the "record a completed upload" call, so it must be validated
+ * here, not trusted (the invariant stated in schemas/document-file.ts). When the
+ * real upload flow lands, the key must be BUILT server-side via buildObjectKey
+ * and the signed upload URL bound to it — this check stays as the backstop.
+ */
+function isWorkspaceScopedObjectKey(ctx: WorkspaceContext, objectKey: string): boolean {
+  const key = objectKey.toLowerCase()
+  return (
+    key.startsWith(`${ctx.workspace.id.toLowerCase()}/`) &&
+    !key.includes('..') &&
+    !objectKey.includes('\0')
+  )
+}
+
 /** Assert a folder exists, belongs to this workspace, and isn't deleted. */
 async function folderExists(ctx: WorkspaceContext, folderId: string): Promise<boolean> {
   const { data } = await ctx.supabase
@@ -226,6 +247,11 @@ export async function uploadDocument(
 
     if (folderId && !(await folderExists(ctx, folderId))) {
       return { ok: false, error: 'Target folder not found' }
+    }
+
+    // SEC H4: the object reference must live under this workspace's key prefix.
+    if (!isWorkspaceScopedObjectKey(ctx, file.objectKey)) {
+      return { ok: false, error: 'Invalid storage reference' }
     }
 
     // 1. The managed document (points at its current version once written).
@@ -521,6 +547,11 @@ export async function createDocumentVersion(
       .maybeSingle()
     if (!doc) return { ok: false, error: 'Document not found' }
     const nextVersion = doc.current_version + 1
+
+    // SEC H4: the object reference must live under this workspace's key prefix.
+    if (!isWorkspaceScopedObjectKey(ctx, file.objectKey)) {
+      return { ok: false, error: 'Invalid storage reference' }
+    }
 
     const { data: fileRow, error: fileErr } = await ctx.supabase
       .from('files')
